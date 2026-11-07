@@ -46,6 +46,8 @@ demo:
   max_demo_area_km2: 25.0
   sweep: [0.1, 0.3, 0.6, 1.0]
   train_severity_max: 1.0  # overwritten after the data step with the observed maximum
+  dry_season_start_month: 12  # demo before image: clearest Kerala months (Dec-Apr)
+  dry_season_end_month: 4
 
 eval:
   rgb_max: 0.3            # reflectance mapped to white in RGB figures and image metrics

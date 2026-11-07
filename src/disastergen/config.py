@@ -102,6 +102,8 @@ class DemoConfig:
     max_demo_area_km2: float = 25.0
     sweep: tuple[float, ...] = (0.1, 0.3, 0.6, 1.0)
     train_severity_max: float = 1.0
+    dry_season_start_month: int = 12
+    dry_season_end_month: int = 4
 
 
 @dataclass(frozen=True)
