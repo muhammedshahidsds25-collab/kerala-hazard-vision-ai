@@ -1,0 +1,88 @@
+"""Tests for evaluation metrics, baselines and figures (FID itself runs only on Colab)."""
+
+import json
+
+import numpy as np
+import pytest
+import torch
+from conftest import write_tile
+
+from disastergen.data.dataset import TileDataset, compute_stats
+from disastergen.diffusion_baseline import render_prompts
+from disastergen.evaluate import (
+    evaluate_identity,
+    evaluate_model,
+    image_metrics,
+    plot_severity_sweep,
+    plot_triplets,
+    rgb_uint8,
+    save_metrics,
+    severity_consistency,
+)
+from disastergen.models import UNetGenerator
+
+
+def test_identical_images_perfect():
+    rgb = rgb_uint8(torch.rand(2, 4, 64, 64) * 0.3, rgb_max=0.3)
+    m = image_metrics(rgb, rgb)
+    assert m["ssim"] == pytest.approx(1.0) and m["psnr"] > 40
+
+
+def test_different_images_worse():
+    a = rgb_uint8(torch.rand(2, 4, 64, 64) * 0.3, rgb_max=0.3)
+    b = rgb_uint8(torch.rand(2, 4, 64, 64) * 0.3, rgb_max=0.3)
+    assert image_metrics(a, b)["ssim"] < 0.5
+
+
+def test_rgb_uint8_shape_dtype_and_band_order():
+    bands = torch.zeros(1, 4, 8, 8)
+    bands[:, 2] = 0.3  # B4 = red at full scale
+    rgb = rgb_uint8(bands, rgb_max=0.3)
+    assert rgb.dtype == torch.uint8 and rgb.shape == (1, 3, 8, 8)
+    assert rgb[0, 0].unique().tolist() == [255] and rgb[0, 2].unique().tolist() == [0]
+
+
+def test_severity_consistency_perfect():
+    result = severity_consistency(np.array([0.1, 0.5, 0.9]), np.array([0.1, 0.5, 0.9]))
+    assert result["pearson_r"] == pytest.approx(1.0) and result["mae"] == pytest.approx(0.0)
+
+
+def test_severity_consistency_constant_output_is_nan():
+    result = severity_consistency(np.array([0.1, 0.5, 0.9]), np.zeros(3))
+    assert np.isnan(result["pearson_r"]) and result["mae"] == pytest.approx(0.5)
+
+
+def test_render_prompts():
+    prompts = render_prompts(["satellite image after a {hazard}", "{hazard} damage"], "landslide")
+    assert prompts == ["satellite image after a landslide", "landslide damage"]
+
+
+def test_save_metrics_roundtrip(tmp_path):
+    save_metrics({"a": 1.0}, tmp_path / "m.json")
+    assert json.loads((tmp_path / "m.json").read_text()) == {"a": 1.0}
+
+
+@pytest.fixture
+def same_ds(tmp_path):
+    rng = np.random.default_rng(0)
+    paths = [write_tile(tmp_path, "t", 0, i, 0.0, rng, same=True) for i in range(3)]
+    return TileDataset(paths, compute_stats(paths), augment=False)
+
+
+def test_identity_baseline_on_unchanged_tiles_is_perfect(same_ds, cfg):
+    result = evaluate_identity(same_ds, cfg, with_fid=False)
+    assert result["ssim"] == pytest.approx(1.0) and result["n_tiles"] == 3
+
+
+def test_evaluate_model_reports_metrics_and_sweep(same_ds, cfg):
+    g = UNetGenerator(9, 4, ngf=8, num_downs=6)
+    result = evaluate_model(g, same_ds, cfg, torch.device("cpu"), with_fid=False)
+    assert {"ssim", "psnr", "n_tiles", "severity_consistency"} <= set(result)
+    assert len(result["severity_sweep"]["requested"]) == 3 * len(cfg.demo.sweep)
+
+
+def test_plots_write_files(tmp_path):
+    rgb = rgb_uint8(torch.rand(2, 4, 16, 16) * 0.3, rgb_max=0.3)
+    plot_triplets(rgb, rgb, rgb, tmp_path / "t.png")
+    plot_severity_sweep(rgb[0], [rgb[0], rgb[1]], [0.1, 0.6], tmp_path / "s.png")
+    assert (tmp_path / "t.png").stat().st_size > 0 and (tmp_path / "s.png").stat().st_size > 0

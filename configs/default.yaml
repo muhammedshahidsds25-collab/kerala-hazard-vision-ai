@@ -46,3 +46,17 @@ demo:
   max_demo_area_km2: 25.0
   sweep: [0.1, 0.3, 0.6, 1.0]
   train_severity_max: 1.0  # overwritten after the data step with the observed maximum
+
+eval:
+  rgb_max: 0.3            # reflectance mapped to white in RGB figures and image metrics
+  # Stable Diffusion img2img comparison (pretrained, no fine-tuning). {hazard} is filled in.
+  prompts:
+    - "satellite image of the same area after a {hazard}"
+    - "Sentinel-2 satellite photo, top-down view, after a {hazard}, same terrain and rivers"
+    - "aerial view after a severe {hazard}, exposed brown soil, destroyed vegetation, debris"
+    - "post-disaster satellite imagery, {hazard}, realistic, high detail"
+  sd_model: stable-diffusion-v1-5/stable-diffusion-v1-5
+  sd_strength: 0.5        # how far SD may move away from the before image (0-1)
+  sd_steps: 30
+  sd_size: 512            # SD 1.5 native resolution; tiles are upscaled then resized back
+  sd_batch_size: 8        # fits a 16 GB T4 in fp16

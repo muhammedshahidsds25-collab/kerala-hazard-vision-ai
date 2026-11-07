@@ -105,6 +105,19 @@ class DemoConfig:
 
 
 @dataclass(frozen=True)
+class EvalConfig:
+    """Evaluation and Stable Diffusion comparison settings."""
+
+    rgb_max: float = 0.3
+    prompts: tuple[str, ...] = ("satellite image of the same area after a {hazard}",)
+    sd_model: str = "stable-diffusion-v1-5/stable-diffusion-v1-5"
+    sd_strength: float = 0.5
+    sd_steps: int = 30
+    sd_size: int = 512
+    sd_batch_size: int = 8
+
+
+@dataclass(frozen=True)
 class Config:
     """Root configuration object."""
 
@@ -113,6 +126,7 @@ class Config:
     model: ModelConfig = field(default_factory=ModelConfig)
     train: TrainConfig = field(default_factory=TrainConfig)
     demo: DemoConfig = field(default_factory=DemoConfig)
+    eval: EvalConfig = field(default_factory=EvalConfig)
     events: tuple[Event, ...] = ()
 
 
@@ -165,5 +179,6 @@ def load_config(path: str | Path) -> Config:
         model=_build(ModelConfig, raw.get("model"), "model"),
         train=_build(TrainConfig, raw.get("train"), "train"),
         demo=_build(DemoConfig, raw.get("demo"), "demo"),
+        eval=_build(EvalConfig, raw.get("eval"), "eval"),
         events=events,
     )

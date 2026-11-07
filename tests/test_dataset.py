@@ -12,6 +12,7 @@ from disastergen.data.dataset import (
     compute_stats,
     split_by_event,
     to_reflectance,
+    unnormalise_before,
     weighted_sampler,
 )
 
@@ -45,10 +46,7 @@ def test_augment_applies_same_transform(tmp_path, stats):
     torch.manual_seed(3)
     for _ in range(8):  # several random flips/rotations
         x, y = ds[0]
-        before = x[:4] * torch.from_numpy(stats.std[:4, None, None]) + torch.from_numpy(
-            stats.mean[:4, None, None]
-        )
-        assert torch.allclose(before, to_reflectance(y, stats), atol=1e-5)
+        assert torch.allclose(unnormalise_before(x, stats), to_reflectance(y, stats), atol=1e-5)
 
 
 def test_target_in_range(paths, stats):

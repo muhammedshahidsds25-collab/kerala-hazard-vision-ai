@@ -12,6 +12,7 @@ def test_default_config_loads(cfg):
     assert cfg.train.l1_weight == 100.0 and cfg.data.tile_size == 256
     assert {e.hazard for e in cfg.events} <= {"flood", "landslide"}
     assert cfg.data.test_event in {e.name for e in cfg.events}
+    assert cfg.eval.prompts and all("{hazard}" in p for p in cfg.eval.prompts)
 
 
 def test_events_have_valid_bboxes(cfg):
