@@ -3,6 +3,7 @@
 import numpy as np
 import pytest
 import torch
+from conftest import write_tile
 
 from disastergen.data.dataset import (
     ChannelStats,
@@ -17,23 +18,9 @@ from disastergen.data.dataset import (
 SIZE = 64
 
 
-def write_tile(directory, event, row, col, sev, rng, same=False):
-    before = rng.uniform(0.0, 0.4, (4, SIZE, SIZE)).astype(np.float32)
-    after = before.copy() if same else rng.uniform(0.0, 0.4, (4, SIZE, SIZE)).astype(np.float32)
-    cond = rng.uniform(0.0, 30.0, (3, SIZE, SIZE)).astype(np.float32)
-    path = directory / f"{event}_r{row}_c{col}.npz"
-    np.savez(path, before=before, after=after, cond=cond, hazard=1, severity=sev, event=event)
-    return path
-
-
 @pytest.fixture
-def paths(tmp_path):
-    rng = np.random.default_rng(0)
-    out = []
-    for event in ("a", "b_2020", "c"):
-        for i in range(10):
-            out.append(write_tile(tmp_path, event, 0, i * 128, 0.5 if i < 2 else 0.0, rng))
-    return out
+def paths(tile_paths):
+    return tile_paths
 
 
 @pytest.fixture

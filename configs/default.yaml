@@ -38,6 +38,7 @@ train:
   seed: 42
   severe_threshold: 0.05  # tiles above this severity are oversampled
   val_frac: 0.1
+  num_workers: 2          # Colab has 2 CPU cores
   checkpoint_dir: checkpoints
 
 demo:

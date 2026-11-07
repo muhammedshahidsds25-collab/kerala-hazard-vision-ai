@@ -90,6 +90,7 @@ class TrainConfig:
     seed: int = 42
     severe_threshold: float = 0.05
     val_frac: float = 0.1
+    num_workers: int = 2
     checkpoint_dir: str = "checkpoints"
 
 
