@@ -1,0 +1,20 @@
+# Python
+.venv/
+__pycache__/
+*.egg-info/
+.pytest_cache/
+.ruff_cache/
+
+# Data and model artefacts (live on Google Drive, not in git)
+checkpoints/
+data/
+*.npz
+*.tif
+*.pt
+
+# Notebooks
+.ipynb_checkpoints/
+
+# Local planning workspace and personal files
+.superpowers/
+/capstone_topic_submission*.pdf
