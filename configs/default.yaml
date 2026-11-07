@@ -9,6 +9,9 @@ data:
   post_window_days: 150   # ...then composite this many days for the "after" image
   max_cloud_pct: 40       # scene-level cloud filter before per-pixel masking
   scale_m: 10             # Sentinel-2 visible/NIR resolution
+  crs: "EPSG:32643"       # UTM zone 43N covers all of Kerala
+  check_scale_m: 100      # coarse scale for the quick cloud-free check
+  min_valid_frac: 0.6     # drop an event if less of its area has a clear composite
   rain_days_before: 7     # CHIRPS accumulation window ending on the event day
   drive_folder: disastergen
   test_event: pettimudi_2020

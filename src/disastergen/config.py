@@ -49,6 +49,9 @@ class DataConfig:
     post_offset_days: int = 90
     max_cloud_pct: int = 40
     scale_m: int = 10
+    crs: str = "EPSG:32643"
+    check_scale_m: int = 100
+    min_valid_frac: float = 0.6
     rain_days_before: int = 7
     drive_folder: str = "disastergen"
     test_event: str = "pettimudi_2020"
