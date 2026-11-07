@@ -1,0 +1,44 @@
+# Main configuration. Every number the code uses is set here; see src/disastergen/config.py.
+
+data:
+  tile_size: 256          # pixels (2.56 km at 10 m)
+  stride: 128             # 50% overlap: more training tiles from few events
+  max_nodata_frac: 0.2    # drop tiles with more cloud-masked pixels than this
+  pre_window_days: 120    # dry-season window before the event for the "before" composite
+  post_offset_days: 90    # skip the monsoon after the event...
+  post_window_days: 150   # ...then composite this many days for the "after" image
+  max_cloud_pct: 40       # scene-level cloud filter before per-pixel masking
+  scale_m: 10             # Sentinel-2 visible/NIR resolution
+  rain_days_before: 7     # CHIRPS accumulation window ending on the event day
+  drive_folder: disastergen
+  test_event: pettimudi_2020
+
+severity:
+  ndvi_drop: 0.25         # landslide: vegetation loss that counts as changed
+  ndwi_rise: 0.2          # flood: water-index gain that counts as changed
+  eps: 1.0e-6
+
+model:
+  in_channels: 9          # 4 before bands + slope + rain + soil + severity + hazard
+  out_channels: 4         # B2, B3, B4, B8 after
+  ngf: 64
+  ndf: 64
+  num_downs: 8            # 256 / 2**8 = 1 at the bottleneck
+
+train:
+  epochs: 100
+  batch_size: 16
+  lr: 2.0e-4
+  beta1: 0.5
+  beta2: 0.999
+  l1_weight: 100.0
+  seed: 42
+  severe_threshold: 0.05  # tiles above this severity are oversampled
+  val_frac: 0.1
+  checkpoint_dir: checkpoints
+
+demo:
+  kerala_bbox: [74.85, 8.17, 77.42, 12.80]
+  max_demo_area_km2: 25.0
+  sweep: [0.1, 0.3, 0.6, 1.0]
+  train_severity_max: 1.0  # overwritten after the data step with the observed maximum

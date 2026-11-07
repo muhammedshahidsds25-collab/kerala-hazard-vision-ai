@@ -1,0 +1,36 @@
+# Kerala disaster events used for before/after pairs.
+# bbox = [min_lon, min_lat, max_lon, max_lat], about +/-0.1 deg (~22 km) around the impact zone.
+# Centres are approximate: verify each one visually in notebooks/01_data.ipynb and adjust.
+# Note: the puthumala_2019 box largely overlaps wayanad_2024 (same valley, different years). Both are
+# training events, so this is extra data, not test leakage.
+
+events:
+  - name: kerala_floods_2018
+    hazard: flood
+    date: 2018-08-16
+    bbox: [76.23, 10.20, 76.43, 10.40]   # Chalakudy river plain
+
+  - name: kavalappara_2019
+    hazard: landslide
+    date: 2019-08-08
+    bbox: [76.20, 11.23, 76.40, 11.43]   # Malappuram
+
+  - name: puthumala_2019
+    hazard: landslide
+    date: 2019-08-08
+    bbox: [76.08, 11.40, 76.28, 11.60]   # Wayanad
+
+  - name: pettimudi_2020
+    hazard: landslide
+    date: 2020-08-06
+    bbox: [76.92, 10.07, 77.12, 10.27]   # Idukki (held-out test event)
+
+  - name: kokkayar_2021
+    hazard: landslide
+    date: 2021-10-16
+    bbox: [76.75, 9.50, 76.95, 9.70]     # Kottayam / Idukki border
+
+  - name: wayanad_2024
+    hazard: landslide
+    date: 2024-07-30
+    bbox: [76.03, 11.37, 76.23, 11.57]   # Mundakkai-Chooralmala
