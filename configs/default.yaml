@@ -15,7 +15,7 @@ data:
 
 severity:
   ndvi_drop: 0.25         # landslide: vegetation loss that counts as changed
-  ndwi_rise: 0.2          # flood: water-index gain that counts as changed
+  water_ndwi: 0.0         # flood: pixel becomes water when NDWI crosses this (McFeeters)
   eps: 1.0e-6
 
 model:

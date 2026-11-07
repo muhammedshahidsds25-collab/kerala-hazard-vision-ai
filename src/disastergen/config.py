@@ -59,7 +59,7 @@ class SeverityConfig:
     """Thresholds that turn spectral change into a 0-1 severity label."""
 
     ndvi_drop: float = 0.25
-    ndwi_rise: float = 0.2
+    water_ndwi: float = 0.0
     eps: float = 1e-6
 
 
