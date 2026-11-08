@@ -7,7 +7,7 @@ __pycache__/
 
 # Data and model artefacts (live on Google Drive, not in git)
 checkpoints/
-data/
+/data/
 *.npz
 *.tif
 *.pt
