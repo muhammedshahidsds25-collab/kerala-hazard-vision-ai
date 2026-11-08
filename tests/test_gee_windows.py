@@ -6,7 +6,11 @@ from datetime import date
 import pytest
 
 from kerala_hazard_vision_ai.config import DataConfig, Event
-from kerala_hazard_vision_ai.data.gee_export import composite_windows, dry_season_before
+from kerala_hazard_vision_ai.data.gee_export import (
+    composite_windows,
+    dry_season_before,
+    processing_level,
+)
 
 BBOX = (76.0, 10.0, 76.1, 10.1)
 
@@ -53,3 +57,9 @@ def test_dry_season_must_cross_new_year():
 def test_module_imports_without_earth_engine():
     # CI has no earthengine-api: importing the module must not import `ee`.
     assert "ee" not in sys.modules
+
+
+def test_floods_use_top_of_atmosphere_level(cfg):
+    # Level-1C covers 2015+ everywhere (Level-2A is not global before 2019).
+    assert processing_level("flood", cfg.data) == "l1c"
+    assert processing_level("landslide", cfg.data) == "l2a"

@@ -26,12 +26,16 @@ from kerala_hazard_vision_ai.data.severity import BANDS
 if TYPE_CHECKING:
     import ee
 
-S2_COLLECTION = "COPERNICUS/S2_SR_HARMONIZED"
+S2_COLLECTIONS = {
+    "l2a": "COPERNICUS/S2_SR_HARMONIZED",  # surface reflectance; global only from 2019
+    "l1c": "COPERNICUS/S2_HARMONIZED",  # top-of-atmosphere; global since 2015
+}
+CLOUD_SCORE_COLLECTION = "GOOGLE/CLOUD_SCORE_PLUS/V1/S2_HARMONIZED"
 DEM_COLLECTION = "COPERNICUS/DEM/GLO30"
 RAIN_COLLECTION = "UCSB-CHG/CHIRPS/DAILY"
 SOIL_IMAGE = "OpenLandMap/SOL/SOL_TEXTURE-CLASS_USDA-TT_M/v02"
 
-S2_REFLECTANCE_SCALE = 10_000  # Sentinel-2 L2A digital numbers per unit reflectance
+S2_REFLECTANCE_SCALE = 10_000  # Sentinel-2 digital numbers per unit reflectance (L1C and L2A)
 # Scene-classification classes to mask: cloud shadow, medium/high cloud, thin cirrus.
 S2_MASKED_SCL = (3, 8, 9, 10)
 NODATA = -9999.0
@@ -75,6 +79,15 @@ def composite_windows(event: Event, cfg: DataConfig) -> tuple[DateWindow, DateWi
     return dry_season_before(event.date, cfg), after
 
 
+def processing_level(hazard: str, cfg: DataConfig) -> str:
+    """Sentinel-2 product for a hazard: ``"l1c"`` for those in ``cfg.toa_hazards``, else ``"l2a"``.
+
+    Flood events need near-event imagery from 2018 onwards, where only Level-1C is global.
+    Using one level per hazard keeps a hazard's training pairs, test pairs and demo inputs alike.
+    """
+    return "l1c" if hazard in cfg.toa_hazards else "l2a"
+
+
 def aoi(bbox: tuple[float, float, float, float]) -> ee.Geometry:
     """Rectangle geometry from (min_lon, min_lat, max_lon, max_lat)."""
     import ee
@@ -92,18 +105,43 @@ def _mask_clouds(image: ee.Image) -> ee.Image:
     return image.updateMask(clear)
 
 
-def s2_composite(region: ee.Geometry, start: date, end: date, max_cloud_pct: int) -> ee.Image:
-    """Cloud-masked median Sentinel-2 composite in reflectance units (0-1), ``BANDS`` only."""
+def _mask_clouds_cloud_score(clear_threshold: float):
+    def mask(image: ee.Image) -> ee.Image:
+        return image.updateMask(image.select("cs_cdf").gte(clear_threshold))
+
+    return mask
+
+
+def s2_composite(
+    region: ee.Geometry,
+    start: date,
+    end: date,
+    cfg: DataConfig,
+    level: str = "l2a",
+) -> ee.Image:
+    """Cloud-masked median Sentinel-2 composite in reflectance units (0-1), ``BANDS`` only.
+
+    Level-2A clouds are masked with its scene classification; Level-1C clouds with Google's
+    Cloud Score+. A window without any image gives a fully masked composite (not an image
+    without bands), so the cloud check scores it 0 instead of Earth Engine failing.
+    """
     import ee
 
     collection = (
-        ee.ImageCollection(S2_COLLECTION)
+        ee.ImageCollection(S2_COLLECTIONS[level])
         .filterBounds(region)
         .filterDate(start.isoformat(), (end + timedelta(days=1)).isoformat())  # end exclusive
-        .filter(ee.Filter.lt("CLOUDY_PIXEL_PERCENTAGE", max_cloud_pct))
-        .map(_mask_clouds)
+        .filter(ee.Filter.lt("CLOUDY_PIXEL_PERCENTAGE", cfg.max_cloud_pct))
     )
-    return collection.select(list(BANDS)).median().divide(S2_REFLECTANCE_SCALE).clip(region)
+    if level == "l2a":
+        collection = collection.map(_mask_clouds)
+    else:
+        collection = collection.linkCollection(
+            ee.ImageCollection(CLOUD_SCORE_COLLECTION), ["cs_cdf"]
+        ).map(_mask_clouds_cloud_score(cfg.cloud_score_clear))
+    empty = ee.Image.constant([0] * len(BANDS)).rename(list(BANDS)).toUint16().updateMask(0)
+    bands = collection.select(list(BANDS)).merge(ee.ImageCollection([empty]))
+    return bands.median().divide(S2_REFLECTANCE_SCALE).clip(region)
 
 
 def slope_image(region: ee.Geometry) -> ee.Image:
@@ -141,8 +179,9 @@ def event_stack(event: Event, cfg: DataConfig) -> ee.Image:
     """The 11-band stack expected by ``tiling.split_stack``: before, after, slope, rain, soil."""
     region = aoi(event.bbox)
     (pre_start, pre_end), (post_start, post_end) = composite_windows(event, cfg)
-    before = s2_composite(region, pre_start, pre_end, cfg.max_cloud_pct)
-    after = s2_composite(region, post_start, post_end, cfg.max_cloud_pct)
+    level = processing_level(event.hazard, cfg)
+    before = s2_composite(region, pre_start, pre_end, cfg, level)
+    after = s2_composite(region, post_start, post_end, cfg, level)
     return (
         before.rename([f"pre_{b}" for b in BANDS])
         .addBands(after.rename([f"post_{b}" for b in BANDS]))
@@ -158,7 +197,8 @@ def cloud_free_fraction(event: Event, cfg: DataConfig) -> dict[str, float]:
     region = aoi(event.bbox)
     result = {}
     for name, (start, end) in zip(("pre", "post"), composite_windows(event, cfg), strict=True):
-        valid = s2_composite(region, start, end, cfg.max_cloud_pct).select("B4").mask()
+        composite = s2_composite(region, start, end, cfg, processing_level(event.hazard, cfg))
+        valid = composite.select("B4").mask()
         stats = valid.reduceRegion(
             ee.Reducer.mean(), region, scale=cfg.check_scale_m, maxPixels=MAX_PIXELS
         )

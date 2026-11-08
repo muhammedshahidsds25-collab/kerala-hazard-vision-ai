@@ -114,10 +114,13 @@ def crossfade(frames: Sequence[np.ndarray], steps: int) -> list[np.ndarray]:
     return out
 
 
-def fetch_area(bbox: BBox, cfg: Config, today: date | None = None) -> tuple[np.ndarray, ...]:
+def fetch_area(
+    bbox: BBox, cfg: Config, hazard: str, today: date | None = None
+) -> tuple[np.ndarray, ...]:
     """Download (before (4, H, W), slope (H, W), soil (H, W)) for an area from Earth Engine.
 
-    Needs ``ee.Initialize`` and the ``gee`` extra. Cloud gaps are filled with the area median.
+    The before image uses the Sentinel-2 product the hazard was trained on. Needs
+    ``ee.Initialize`` and the ``gee`` extra. Cloud gaps are filled with the area median.
     """
     import geemap
 
@@ -128,7 +131,7 @@ def fetch_area(bbox: BBox, cfg: Config, today: date | None = None) -> tuple[np.n
     # Same season definition as the training before-images, so the input looks familiar.
     start, end = gx.dry_season_before(today or date.today(), cfg.data)
     image = (
-        gx.s2_composite(region, start, end, cfg.data.max_cloud_pct)
+        gx.s2_composite(region, start, end, cfg.data, gx.processing_level(hazard, cfg.data))
         .addBands(gx.slope_image(region))
         .addBands(gx.soil_image())
         .toFloat()

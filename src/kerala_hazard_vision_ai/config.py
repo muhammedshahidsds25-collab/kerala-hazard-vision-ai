@@ -53,6 +53,8 @@ class DataConfig:
     crs: str = "EPSG:32643"
     check_scale_m: int = 100
     min_valid_frac: float = 0.6
+    toa_hazards: tuple[str, ...] = ("flood",)
+    cloud_score_clear: float = 0.6
     rain_days_before: int = 7
     drive_folder: str = "kerala_hazard_vision_ai"
     test_events: tuple[str, ...] = ("pettimudi_2020", "kuttanad_2018")
