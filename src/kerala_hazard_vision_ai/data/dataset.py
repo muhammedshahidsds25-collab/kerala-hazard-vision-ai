@@ -11,6 +11,7 @@ from __future__ import annotations
 import json
 import re
 from collections import defaultdict
+from collections.abc import Iterable
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -65,6 +66,16 @@ def load_shared_stats(*checkpoint_dirs: Path) -> ChannelStats:
 def _tile_event(path: Path) -> str:
     with np.load(path) as tile:
         return str(tile["event"])
+
+
+def list_tiles(tile_dir: Path, events: Iterable[str]) -> list[Path]:
+    """Sorted tile files of the given events.
+
+    Tiles of any other event in the folder (e.g. one dropped after the go/no-go check) are
+    skipped, so removing an event from ``events.yaml`` removes it from training and evaluation.
+    """
+    wanted = set(events)
+    return [p for p in sorted(Path(tile_dir).glob("*.npz")) if _tile_event(p) in wanted]
 
 
 def _tile_col(path: Path) -> int:

@@ -10,6 +10,7 @@ from kerala_hazard_vision_ai.data.dataset import (
     TileDataset,
     build_input,
     compute_stats,
+    list_tiles,
     load_shared_stats,
     split_by_event,
     to_reflectance,
@@ -123,3 +124,9 @@ def test_load_shared_stats_rejects_different_normalisation(stats, tmp_path):
     ChannelStats(stats.mean + 1, stats.std).save(tmp_path / "b" / "stats.json")
     with pytest.raises(ValueError, match="different tiles"):
         load_shared_stats(tmp_path / "a", tmp_path / "b")
+
+
+def test_list_tiles_keeps_only_configured_events(paths):
+    tiles = list_tiles(paths[0].parent, {"a", "c"})
+    assert len(tiles) == 20 and tiles == sorted(tiles)
+    assert {p.name.split("_r")[0] for p in tiles} == {"a", "c"}

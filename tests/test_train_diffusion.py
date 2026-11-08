@@ -3,6 +3,8 @@
 import math
 from dataclasses import replace
 
+from conftest import SYNTHETIC_EVENTS
+
 from kerala_hazard_vision_ai.config import ModelConfig
 from kerala_hazard_vision_ai.train import History
 from kerala_hazard_vision_ai.train_diffusion import fit_diffusion
@@ -13,6 +15,7 @@ def tiny_config(cfg, tmp_path, epochs):
         cfg,
         model=ModelConfig(),
         data=replace(cfg.data, test_event="a"),
+        events=SYNTHETIC_EVENTS,
         train=replace(cfg.train, num_workers=0),
         diffusion=replace(
             cfg.diffusion,

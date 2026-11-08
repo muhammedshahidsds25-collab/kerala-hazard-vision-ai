@@ -6,6 +6,7 @@ from dataclasses import replace
 
 import pytest
 import torch
+from conftest import SYNTHETIC_EVENTS
 
 from kerala_hazard_vision_ai.config import ModelConfig
 from kerala_hazard_vision_ai.models import build_models
@@ -86,6 +87,7 @@ def tiny_config(cfg, tmp_path, epochs):
         cfg,
         model=TINY,
         data=replace(cfg.data, test_event="a"),
+        events=SYNTHETIC_EVENTS,
         train=replace(
             cfg.train, epochs=epochs, batch_size=4, num_workers=0,
             checkpoint_dir=str(tmp_path / "ckpt"),

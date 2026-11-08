@@ -55,7 +55,7 @@ cloud-free pixels whose change matches the hazard:
 **Events** are listed in [`configs/events.yaml`](configs/events.yaml). Before and after images
 are matching dry-season composites (Dec–Apr) on either side of each event.
 - **Kerala:**
-  - floods 2018
+  - floods 2018 (exported, then dropped: the water had drained before the after image)
   - Kavalappara 2019
   - Puthumala 2019
   - Pettimudi 2020 (held out as the test event)
@@ -152,8 +152,9 @@ the repo to publish the results.
   visible, such as landslide scars and flooded fields.
 - **Few events:** with 10 events, results describe a small sample, and overlapping tiles make
   the effective sample size smaller than the tile count.
-- **Floods:** flood water recedes before the next dry season, and the 2018 event predates
-  global Sentinel-2 L2A coverage, so floods may fail the go/no-go check. See `01_data.ipynb`.
+- **Floods:** dropped. By the dry-season after-image the 2018 flood water had drained (median
+  tile severity 0.0001), so the models are trained on landslides only. Flood mapping needs
+  near-event imagery, e.g. Sentinel-1 radar, which sees through monsoon cloud: future work.
 - **Soil:** soil texture is a class number treated as a continuous value.
 - **Demo rainfall:** the demo uses a constant rainfall scenario instead of a forecast.
 - **Area check:** the demo checks the Kerala bounding rectangle, not the state border.

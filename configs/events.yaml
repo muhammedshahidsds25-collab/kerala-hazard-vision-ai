@@ -5,10 +5,13 @@
 # training events, so this is extra data, not test leakage.
 
 events:
-  - name: kerala_floods_2018
-    hazard: flood
-    date: 2018-08-16
-    bbox: [76.23, 10.20, 76.43, 10.40]   # Chalakudy river plain
+  # Dropped after the go/no-go check (2026-11-08): the flood water had drained before the
+  # dry-season after-composite (median tile severity 0.0001), so the pair shows no flood.
+  # Floods are future work; its exported tiles are ignored because it is not listed here.
+  # - name: kerala_floods_2018
+  #   hazard: flood
+  #   date: 2018-08-16
+  #   bbox: [76.23, 10.20, 76.43, 10.40]   # Chalakudy river plain
 
   - name: kavalappara_2019
     hazard: landslide

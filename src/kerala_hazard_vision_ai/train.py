@@ -32,6 +32,7 @@ from kerala_hazard_vision_ai.data.dataset import (
     ChannelStats,
     TileDataset,
     compute_stats,
+    list_tiles,
     split_by_event,
     weighted_sampler,
 )
@@ -167,7 +168,7 @@ def prepare_data(
         ValueError: If there are no training or validation tiles.
     """
     split = split_by_event(
-        sorted(Path(tile_dir).glob("*.npz")),
+        list_tiles(tile_dir, (event.name for event in cfg.events)),
         {cfg.data.test_event},
         cfg.train.val_frac,
         cfg.data.tile_size,

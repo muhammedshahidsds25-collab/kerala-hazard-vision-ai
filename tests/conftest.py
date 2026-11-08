@@ -1,11 +1,12 @@
 """Shared pytest fixtures."""
 
+from datetime import date
 from pathlib import Path
 
 import numpy as np
 import pytest
 
-from kerala_hazard_vision_ai.config import Config, load_config
+from kerala_hazard_vision_ai.config import Config, Event, load_config
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
 DEFAULT_CONFIG = REPO_ROOT / "configs" / "default.yaml"
@@ -44,3 +45,10 @@ def tile_paths(tmp_path):
         for event in ("a", "b_2020", "c")
         for i in range(10)
     ]
+
+
+# Events matching the synthetic tiles in ``tile_paths`` (training filters tiles by event).
+SYNTHETIC_EVENTS = tuple(
+    Event(name, "landslide", date(2020, 8, 6), (76.0, 10.0, 76.1, 10.1))
+    for name in ("a", "b_2020", "c")
+)
