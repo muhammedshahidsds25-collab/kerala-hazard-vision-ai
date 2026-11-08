@@ -9,7 +9,7 @@ from __future__ import annotations
 
 import json
 import time
-from collections.abc import Callable, Sequence
+from collections.abc import Callable, Mapping, Sequence
 from pathlib import Path
 
 import numpy as np
@@ -170,21 +170,17 @@ def _show(ax, rgb: torch.Tensor, title: str) -> None:
     ax.axis("off")
 
 
-def plot_triplets(
-    before_rgb: torch.Tensor,
-    real_rgb: torch.Tensor,
-    fake_rgb: torch.Tensor,
-    path: Path,
-    n: int = 4,
-) -> Figure:
-    """Grid of before / real after / generated after for the first ``n`` tiles; saved to path."""
-    rows = min(n, len(before_rgb))
-    fig = Figure(figsize=(9, 3 * rows))
-    axes = fig.subplots(rows, 3, squeeze=False)
+def plot_comparison(columns: Mapping[str, torch.Tensor], path: Path, n: int = 4) -> Figure:
+    """Grid with one column per named RGB batch (e.g. before, real, each model); saved to path.
+
+    Row ``i`` shows tile ``i`` of every batch, so all batches must share the tile order.
+    """
+    rows = min(n, *(len(batch) for batch in columns.values()))
+    fig = Figure(figsize=(3 * len(columns), 3 * rows))
+    axes = fig.subplots(rows, len(columns), squeeze=False)
     for i in range(rows):
-        _show(axes[i, 0], before_rgb[i], "Before")
-        _show(axes[i, 1], real_rgb[i], "Real after")
-        _show(axes[i, 2], fake_rgb[i], "Generated after")
+        for ax, (title, batch) in zip(axes[i], columns.items(), strict=True):
+            _show(ax, batch[i], title)
     fig.tight_layout()
     fig.savefig(path, dpi=150)
     return fig

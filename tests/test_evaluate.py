@@ -16,8 +16,8 @@ from kerala_hazard_vision_ai.evaluate import (
     evaluate_model,
     gan_predict,
     image_metrics,
+    plot_comparison,
     plot_severity_sweep,
-    plot_triplets,
     rgb_uint8,
     save_metrics,
     severity_consistency,
@@ -101,6 +101,8 @@ def test_diffusion_predict_shape_and_determinism(cfg):
 
 def test_plots_write_files(tmp_path):
     rgb = rgb_uint8(torch.rand(2, 4, 16, 16) * 0.3, rgb_max=0.3)
-    plot_triplets(rgb, rgb, rgb, tmp_path / "t.png")
+    fig = plot_comparison({"Before": rgb, "Real": rgb, "pix2pix": rgb, "Diffusion": rgb},
+                          tmp_path / "t.png")
+    assert len(fig.axes) == 2 * 4  # 2 tiles x 4 columns
     plot_severity_sweep(rgb[0], [rgb[0], rgb[1]], [0.1, 0.6], tmp_path / "s.png")
     assert (tmp_path / "t.png").stat().st_size > 0 and (tmp_path / "s.png").stat().st_size > 0
