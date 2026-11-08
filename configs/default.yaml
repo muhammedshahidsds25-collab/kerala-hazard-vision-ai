@@ -59,3 +59,18 @@ eval:
   sd_steps: 30
   sd_size: 512            # SD 1.5 native resolution; tiles are upscaled then resized back
   sd_batch_size: 8        # fits a 16 GB T4 in fp16
+
+diffusion:                # Palette-style conditional DDPM, compared against pix2pix
+  block_out_channels: [64, 128, 256, 256]
+  layers_per_block: 2
+  attention_levels: 2     # self-attention in the two lowest-resolution levels
+  norm_num_groups: 32
+  train_timesteps: 1000
+  beta_schedule: squaredcos_cap_v2  # cosine noise schedule (Nichol & Dhariwal, 2021)
+  sample_steps: 50        # DDIM steps at inference
+  epochs: 200             # ~3-4 h on a T4 with mixed precision; resumable
+  batch_size: 8
+  lr: 1.0e-4
+  ema_decay: 0.999        # evaluate an exponential moving average of the weights
+  mixed_precision: true   # fp16 autocast on CUDA only
+  checkpoint_dir: checkpoints_diffusion

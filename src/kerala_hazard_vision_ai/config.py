@@ -101,6 +101,25 @@ class TrainConfig:
 
 
 @dataclass(frozen=True)
+class DiffusionConfig:
+    """Palette-style conditional diffusion model (Saharia et al., 2022) and its training."""
+
+    block_out_channels: tuple[int, ...] = (64, 128, 256, 256)
+    layers_per_block: int = 2
+    attention_levels: int = 2
+    norm_num_groups: int = 32
+    train_timesteps: int = 1000
+    beta_schedule: str = "squaredcos_cap_v2"
+    sample_steps: int = 50
+    epochs: int = 200
+    batch_size: int = 8
+    lr: float = 1e-4
+    ema_decay: float = 0.999
+    mixed_precision: bool = True
+    checkpoint_dir: str = "checkpoints_diffusion"
+
+
+@dataclass(frozen=True)
 class DemoConfig:
     """Interactive demo limits."""
 
@@ -133,6 +152,7 @@ class Config:
     train: TrainConfig = field(default_factory=TrainConfig)
     demo: DemoConfig = field(default_factory=DemoConfig)
     eval: EvalConfig = field(default_factory=EvalConfig)
+    diffusion: DiffusionConfig = field(default_factory=DiffusionConfig)
     events: tuple[Event, ...] = ()
 
 
@@ -186,5 +206,6 @@ def load_config(path: str | Path) -> Config:
         train=_build(TrainConfig, raw.get("train"), "train"),
         demo=_build(DemoConfig, raw.get("demo"), "demo"),
         eval=_build(EvalConfig, raw.get("eval"), "eval"),
+        diffusion=_build(DiffusionConfig, raw.get("diffusion"), "diffusion"),
         events=events,
     )
