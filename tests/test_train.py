@@ -7,9 +7,9 @@ from dataclasses import replace
 import pytest
 import torch
 
-from disastergen.config import ModelConfig
-from disastergen.models import build_models
-from disastergen.train import (
+from kerala_hazard_vision_ai.config import ModelConfig
+from kerala_hazard_vision_ai.models import build_models
+from kerala_hazard_vision_ai.train import (
     fit,
     load_checkpoint,
     make_optimizers,

@@ -5,8 +5,8 @@ from datetime import date
 import numpy as np
 import pytest
 
-from disastergen.config import Event
-from disastergen.data.tiling import (
+from kerala_hazard_vision_ai.config import Event
+from kerala_hazard_vision_ai.data.tiling import (
     STACK_CHANNELS,
     fill_missing,
     iter_tiles,

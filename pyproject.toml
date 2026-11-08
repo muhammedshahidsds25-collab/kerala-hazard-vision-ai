@@ -3,7 +3,7 @@ requires = ["setuptools>=68"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "disastergen"
+name = "kerala_hazard_vision_ai"
 version = "0.1.0"
 description = "Conditional GAN that generates post-disaster Sentinel-2 imagery of Kerala."
 readme = "README.md"

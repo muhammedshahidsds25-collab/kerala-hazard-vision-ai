@@ -5,7 +5,7 @@ import pytest
 import torch
 from conftest import write_tile
 
-from disastergen.data.dataset import (
+from kerala_hazard_vision_ai.data.dataset import (
     ChannelStats,
     TileDataset,
     build_input,

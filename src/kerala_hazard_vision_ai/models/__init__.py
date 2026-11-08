@@ -4,9 +4,9 @@ from __future__ import annotations
 
 from torch import nn
 
-from disastergen.config import ModelConfig
-from disastergen.models.discriminator import PatchDiscriminator
-from disastergen.models.generator import UNetGenerator
+from kerala_hazard_vision_ai.config import ModelConfig
+from kerala_hazard_vision_ai.models.discriminator import PatchDiscriminator
+from kerala_hazard_vision_ai.models.generator import UNetGenerator
 
 INIT_STD = 0.02  # pix2pix / DCGAN weight initialisation
 

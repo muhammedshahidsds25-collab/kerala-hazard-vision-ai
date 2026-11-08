@@ -20,8 +20,8 @@ from typing import TYPE_CHECKING
 
 import numpy as np
 
-from disastergen.config import DataConfig, Event
-from disastergen.data.severity import BANDS
+from kerala_hazard_vision_ai.config import DataConfig, Event
+from kerala_hazard_vision_ai.data.severity import BANDS
 
 if TYPE_CHECKING:
     import ee

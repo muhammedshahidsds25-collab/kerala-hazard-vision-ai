@@ -12,8 +12,8 @@ from pathlib import Path
 
 import numpy as np
 
-from disastergen.config import Config, Event
-from disastergen.data.severity import HAZARD_CODES, severity
+from kerala_hazard_vision_ai.config import Config, Event
+from kerala_hazard_vision_ai.data.severity import HAZARD_CODES, severity
 
 logger = logging.getLogger(__name__)
 

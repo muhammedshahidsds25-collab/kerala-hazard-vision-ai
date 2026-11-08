@@ -20,10 +20,10 @@ from torchmetrics.functional.image import (
     structural_similarity_index_measure,
 )
 
-from disastergen.config import Config
-from disastergen.data.dataset import TileDataset, to_reflectance, unnormalise_before
-from disastergen.data.severity import HAZARD_CODES, severity
-from disastergen.models import UNetGenerator
+from kerala_hazard_vision_ai.config import Config
+from kerala_hazard_vision_ai.data.dataset import TileDataset, to_reflectance, unnormalise_before
+from kerala_hazard_vision_ai.data.severity import HAZARD_CODES, severity
+from kerala_hazard_vision_ai.models import UNetGenerator
 
 HAZARD_NAMES = {code: name for name, code in HAZARD_CODES.items()}
 SEVERITY_CHANNEL, HAZARD_CHANNEL = 7, 8

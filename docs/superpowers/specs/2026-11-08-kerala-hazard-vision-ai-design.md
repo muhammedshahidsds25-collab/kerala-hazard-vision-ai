@@ -156,7 +156,7 @@ All metrics are computed on the held-out event.
 ### 5.7 Code quality
 
 ```
-src/disastergen/  config.py  data/{gee_export,severity,dataset}.py
+src/kerala_hazard_vision_ai/  config.py  data/{gee_export,severity,dataset}.py
                   models/{generator,discriminator}.py  train.py  evaluate.py
 configs/default.yaml   notebooks/01_data 02_train 03_demo   tests/
 README.md  pyproject.toml  .gitignore

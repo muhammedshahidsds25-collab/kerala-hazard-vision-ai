@@ -8,7 +8,7 @@ severity value. It is evaluated against an identity baseline, a pretrained Stabl
 and human raters.
 
 **Architecture:**
-- `src/disastergen` holds all logic: config, GEE export, tiling, severity, dataset, models,
+- `src/kerala_hazard_vision_ai` holds all logic: config, GEE export, tiling, severity, dataset, models,
   training, evaluation, diffusion baseline, human evaluation and demo helpers.
 - Notebooks are thin drivers that run on Colab.
 - Pure-numpy and torch code is unit-tested on CPU. Code that calls Earth Engine or the GPU is
@@ -17,7 +17,7 @@ and human raters.
 **Tech Stack:** Python 3.10+, PyTorch, torchmetrics (with torch-fidelity for FID), numpy, PyYAML,
 earthengine-api, geemap, rasterio, diffusers, pytest, ruff, GitHub Actions.
 
-**Spec:** `docs/superpowers/specs/2026-11-08-disaster-gen-design.md`
+**Spec:** `docs/superpowers/specs/2026-11-08-kerala-hazard-vision-ai-design.md`
 
 ## Global Constraints
 
@@ -42,7 +42,7 @@ earthengine-api, geemap, rasterio, diffusers, pytest, ruff, GitHub Actions.
 - Train/test split is by event. One whole event is held out.
 - Report numbers come only from `outputs/metrics.json` and generated figures.
 - Notebooks are committed with their outputs, because there is no presentation.
-- GitHub remote: `https://github.com/muhammedshahidsds25-collab/disaster-gen`.
+- GitHub remote: `https://github.com/muhammedshahidsds25-collab/kerala-hazard-vision-ai`.
 - Build order follows the task numbers. There are no dates.
 
 ## Review Focus
@@ -66,7 +66,7 @@ earthengine-api, geemap, rasterio, diffusers, pytest, ruff, GitHub Actions.
 
 **Files:**
 - Create: `pyproject.toml`, `.gitignore`, `README.md` (stub), `configs/default.yaml`,
-  `configs/events.yaml`, `src/disastergen/__init__.py`, `src/disastergen/config.py`,
+  `configs/events.yaml`, `src/kerala_hazard_vision_ai/__init__.py`, `src/kerala_hazard_vision_ai/config.py`,
   `.github/workflows/ci.yml`
 - Test: `tests/test_config.py`
 
@@ -75,7 +75,7 @@ earthengine-api, geemap, rasterio, diffusers, pytest, ruff, GitHub Actions.
   - `Config(data: DataConfig, severity: SeverityConfig, model: ModelConfig, train: TrainConfig, demo: DemoConfig, events: list[Event])`
   - `Event(name: str, hazard: str, date: date, bbox: tuple[float, float, float, float])`
     - `bbox` order is (min_lon, min_lat, max_lon, max_lat)
-  - `DataConfig(tile_size=256, stride=256, max_nodata_frac=0.2, pre_window_days=120, post_window_days=150, post_offset_days=90, max_cloud_pct=40, scale_m=10, rain_days_before=7, drive_folder="disastergen", test_event="pettimudi_2020")`
+  - `DataConfig(tile_size=256, stride=256, max_nodata_frac=0.2, pre_window_days=120, post_window_days=150, post_offset_days=90, max_cloud_pct=40, scale_m=10, rain_days_before=7, drive_folder="kerala_hazard_vision_ai", test_event="pettimudi_2020")`
   - `SeverityConfig(ndvi_drop=0.25, ndwi_rise=0.2, eps=1e-6)`
   - `ModelConfig(in_channels=9, out_channels=4, ngf=64, ndf=64, num_downs=8)`
   - `TrainConfig(epochs=100, batch_size=16, lr=2e-4, beta1=0.5, beta2=0.999, l1_weight=100.0, seed=42, severe_threshold=0.05, val_frac=0.1, checkpoint_dir="checkpoints")`
@@ -104,7 +104,7 @@ def test_unknown_key_raises(tmp_path):
 - [ ] **Step 3: Run `pytest tests/test_config.py -v`. Expected: FAIL (module missing).**
 - [ ] **Step 4: Implement `config.py`, `pyproject.toml` and both YAML files**
   - `pyproject.toml`:
-    - src layout, package `disastergen`
+    - src layout, package `kerala_hazard_vision_ai`
     - core deps: `numpy`, `torch`, `torchmetrics[image]`, `pyyaml`
     - extras `gee = [earthengine-api, geemap, rasterio]`
     - extras `diffusion = [diffusers, transformers, accelerate]`
@@ -140,7 +140,7 @@ def test_unknown_key_raises(tmp_path):
 ### Task 2: Severity
 
 **Files:**
-- Create: `src/disastergen/data/__init__.py`, `src/disastergen/data/severity.py`
+- Create: `src/kerala_hazard_vision_ai/data/__init__.py`, `src/kerala_hazard_vision_ai/data/severity.py`
 - Test: `tests/test_severity.py`
 
 **Interfaces:**
@@ -180,7 +180,7 @@ def test_unknown_hazard_raises():
 ### Task 3: Tiling and tile files
 
 **Files:**
-- Create: `src/disastergen/data/tiling.py`
+- Create: `src/kerala_hazard_vision_ai/data/tiling.py`
 - Test: `tests/test_tiling.py`
 
 **Interfaces:**
@@ -220,7 +220,7 @@ def test_write_event_tiles_roundtrip(tmp_path):
 ### Task 4: GEE export and the data notebook
 
 **Files:**
-- Create: `src/disastergen/data/gee_export.py`, `notebooks/01_data.ipynb`
+- Create: `src/kerala_hazard_vision_ai/data/gee_export.py`, `notebooks/01_data.ipynb`
 - Test: `tests/test_gee_windows.py`, covering the pure date logic only (no `ee` import at module top level)
 
 **Interfaces:**
@@ -273,7 +273,7 @@ def test_composite_windows():
 ### Task 5: Dataset and split
 
 **Files:**
-- Create: `src/disastergen/data/dataset.py`
+- Create: `src/kerala_hazard_vision_ai/data/dataset.py`
 - Test: `tests/test_dataset.py`, using small synthetic `.npz` files written to `tmp_path` with size 64
 
 **Interfaces:**
@@ -330,7 +330,7 @@ def test_sampler_oversamples_severe(): assert sampler_weights_for_severe > sampl
 ### Task 6: Models
 
 **Files:**
-- Create: `src/disastergen/models/__init__.py`, `models/generator.py`, `models/discriminator.py`
+- Create: `src/kerala_hazard_vision_ai/models/__init__.py`, `models/generator.py`, `models/discriminator.py`
 - Test: `tests/test_models.py`
 
 **Interfaces:**
@@ -370,7 +370,7 @@ def test_bad_input_size_raises():
 ### Task 7: Training loop and the training notebook
 
 **Files:**
-- Create: `src/disastergen/train.py`, `notebooks/02_train.ipynb`
+- Create: `src/kerala_hazard_vision_ai/train.py`, `notebooks/02_train.ipynb`
 - Test: `tests/test_train.py`
 
 **Interfaces:**
@@ -384,7 +384,7 @@ def test_bad_input_size_raises():
   - `fit(cfg: Config, tile_dir: Path, resume: bool) -> Path`
     - Returns the path of the best generator by validation L1.
     - Logs losses to `checkpoints/history.csv` and saves `checkpoints/stats.json`.
-  - CLI: `python -m disastergen.train --config configs/default.yaml --tiles <dir> [--resume]`
+  - CLI: `python -m kerala_hazard_vision_ai.train --config configs/default.yaml --tiles <dir> [--resume]`
 
 - [ ] **Step 1: Write the failing tests (tiny models: ngf 8, num_downs 6, 64×64 inputs)**
 
@@ -417,8 +417,8 @@ def test_set_seed_reproducible(): set_seed(1); a = torch.rand(3); set_seed(1); a
 ### Task 8: Evaluation, figures, diffusion comparison
 
 **Files:**
-- Create: `src/disastergen/evaluate.py`, `src/disastergen/diffusion_baseline.py`, `notebooks/03_evaluate.ipynb`
-- Modify: `configs/default.yaml` and `src/disastergen/config.py`
+- Create: `src/kerala_hazard_vision_ai/evaluate.py`, `src/kerala_hazard_vision_ai/diffusion_baseline.py`, `notebooks/03_evaluate.ipynb`
+- Modify: `configs/default.yaml` and `src/kerala_hazard_vision_ai/config.py`
   - Add `EvalConfig(prompts: list[str], sd_model: str, sd_strength: float, sd_steps: int)` as
     `Config.eval`.
   - YAML values:
@@ -471,7 +471,7 @@ def test_save_metrics_roundtrip(tmp_path): save_metrics({"a": 1.0}, tmp_path / "
 ### Task 9: Human evaluation
 
 **Files:**
-- Create: `src/disastergen/human_eval.py`, `human_eval/` (survey images, `key.csv`, `answers.csv`)
+- Create: `src/kerala_hazard_vision_ai/human_eval.py`, `human_eval/` (survey images, `key.csv`, `answers.csv`)
 - Test: `tests/test_human_eval.py`
 
 **Interfaces:**
@@ -501,7 +501,7 @@ def test_score_rejects_unknown_item(tmp_path):
 ### Task 10: Demo
 
 **Files:**
-- Create: `src/disastergen/demo.py`, `notebooks/04_demo.ipynb`
+- Create: `src/kerala_hazard_vision_ai/demo.py`, `notebooks/04_demo.ipynb`
 - Test: `tests/test_demo.py`
 
 **Interfaces:**
@@ -553,8 +553,8 @@ def test_is_extrapolation(): assert is_extrapolation(0.95, replace(cfg.demo, tra
   - Limitations: 10 m resolution, few events, flood status, extrapolation.
   - Data credits and licences: Copernicus, CHIRPS, OpenLandMap.
 - [ ] **Step 2: Final checks: `ruff check .` and `pytest` pass, and `git status` is clean.**
-- [ ] **Step 3: The owner creates an empty public repo `disaster-gen` on GitHub, then runs:**
-  - `git remote add origin https://github.com/muhammedshahidsds25-collab/disaster-gen.git`
+- [ ] **Step 3: The owner creates an empty public repo `kerala-hazard-vision-ai` on GitHub, then runs:**
+  - `git remote add origin https://github.com/muhammedshahidsds25-collab/kerala-hazard-vision-ai.git`
   - `git push -u origin main`
   - Confirm the CI check passes on GitHub.
 - [ ] **Step 4: Write the report (under 10 pages)**

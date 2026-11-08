@@ -1,4 +1,4 @@
-# disaster-gen: visualizing post-disaster landslide and flood impact
+# kerala-hazard-vision-ai: visualizing post-disaster landslide and flood impact
 
 A conditional GAN (pix2pix) that takes a real **pre-disaster Sentinel-2 image of an area in
 Kerala** and generates a plausible **post-disaster image** at a chosen severity. It is
@@ -15,7 +15,7 @@ Author: Muhammed Shahid S.
 ## How it works
 
 ```
-Google Earth Engine                        disastergen package                    Colab notebooks
+Google Earth Engine                        kerala_hazard_vision_ai package                    Colab notebooks
 ─────────────────────                      ───────────────────                    ───────────────
 Sentinel-2 before ─┐                       severity.py  NDVI/NDWI change → 0–1     01_data
 Sentinel-2 after  ─┼─► 11-band stack ──►   tiling.py    256×256 tiles (.npz)
@@ -84,7 +84,7 @@ Figures will appear in [`outputs/figures/`](outputs/figures/):
 
 | Path | What it holds |
 |---|---|
-| `src/disastergen/` | All logic, typed and documented |
+| `src/kerala_hazard_vision_ai/` | All logic, typed and documented |
 | `configs/` | Every tunable value (`default.yaml`) and the event list (`events.yaml`) |
 | `notebooks/` | Thin Colab drivers, committed with their outputs |
 | `tests/` | pytest suite (CPU-only, no network) |
@@ -122,7 +122,7 @@ Open the notebooks in order and set `GEE_PROJECT` where asked:
    - Opens the interactive map: draw an area, pick the hazard and rainfall, then crossfade
      through the severities.
 
-Tiles, checkpoints and outputs live in `MyDrive/disastergen/`. Copy `outputs/` and the
+Tiles, checkpoints and outputs live in `MyDrive/kerala_hazard_vision_ai/`. Copy `outputs/` and the
 executed notebooks back into the repo to publish the results.
 
 ## Limitations

@@ -3,7 +3,7 @@
 import numpy as np
 import pytest
 
-from disastergen.data.severity import BANDS, HAZARD_CODES, ndvi, ndwi, severity
+from kerala_hazard_vision_ai.data.severity import BANDS, HAZARD_CODES, ndvi, ndwi, severity
 
 # Reflectance-like values in BANDS order (B2, B3, B4, B8).
 VEGETATION = (0.05, 0.08, 0.05, 0.40)  # low red, high NIR: NDVI ~0.78

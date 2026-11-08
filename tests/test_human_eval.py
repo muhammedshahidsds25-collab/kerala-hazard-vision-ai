@@ -5,7 +5,7 @@ import csv
 import pytest
 import torch
 
-from disastergen.human_eval import build_survey, save_rgb_pngs, score_survey
+from kerala_hazard_vision_ai.human_eval import build_survey, save_rgb_pngs, score_survey
 
 
 @pytest.fixture

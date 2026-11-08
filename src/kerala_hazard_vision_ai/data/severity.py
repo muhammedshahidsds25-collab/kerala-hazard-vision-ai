@@ -10,7 +10,7 @@ from __future__ import annotations
 
 import numpy as np
 
-from disastergen.config import SeverityConfig
+from kerala_hazard_vision_ai.config import SeverityConfig
 
 BANDS: tuple[str, ...] = ("B2", "B3", "B4", "B8")
 HAZARD_CODES: dict[str, int] = {"flood": 0, "landslide": 1}

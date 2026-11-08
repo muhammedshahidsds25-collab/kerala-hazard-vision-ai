@@ -3,8 +3,8 @@
 import pytest
 import torch
 
-from disastergen.config import ModelConfig
-from disastergen.models import PatchDiscriminator, UNetGenerator, build_models
+from kerala_hazard_vision_ai.config import ModelConfig
+from kerala_hazard_vision_ai.models import PatchDiscriminator, UNetGenerator, build_models
 
 
 def test_generator_shape_and_range():

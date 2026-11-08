@@ -18,7 +18,7 @@ import numpy as np
 import torch
 from torch.utils.data import Dataset, WeightedRandomSampler
 
-from disastergen.data.severity import HAZARD_CODES
+from kerala_hazard_vision_ai.data.severity import HAZARD_CODES
 
 N_NORMALISED = 7  # 4 before bands + slope, rain, soil
 TARGET_CLIP_SIGMA = 3.0

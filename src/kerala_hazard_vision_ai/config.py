@@ -52,7 +52,7 @@ class DataConfig:
     check_scale_m: int = 100
     min_valid_frac: float = 0.6
     rain_days_before: int = 7
-    drive_folder: str = "disastergen"
+    drive_folder: str = "kerala_hazard_vision_ai"
     test_event: str = "pettimudi_2020"
 
     def __post_init__(self) -> None:

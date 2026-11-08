@@ -13,7 +13,7 @@ from typing import TYPE_CHECKING
 import numpy as np
 import torch
 
-from disastergen.config import EvalConfig
+from kerala_hazard_vision_ai.config import EvalConfig
 
 if TYPE_CHECKING:
     from diffusers import StableDiffusionImg2ImgPipeline

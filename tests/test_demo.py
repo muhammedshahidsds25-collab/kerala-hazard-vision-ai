@@ -6,15 +6,15 @@ import numpy as np
 import pytest
 import torch
 
-from disastergen.data.dataset import ChannelStats
-from disastergen.demo import (
+from kerala_hazard_vision_ai.data.dataset import ChannelStats
+from kerala_hazard_vision_ai.demo import (
     crossfade,
     generate_sweep,
     is_extrapolation,
     rain_plane_cond,
     validate_area,
 )
-from disastergen.models import UNetGenerator
+from kerala_hazard_vision_ai.models import UNetGenerator
 
 STATS = ChannelStats(np.full(7, 0.1, np.float32), np.full(7, 0.05, np.float32))
 

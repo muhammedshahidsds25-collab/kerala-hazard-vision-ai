@@ -1,4 +1,4 @@
-# Main configuration. Every number the code uses is set here; see src/disastergen/config.py.
+# Main configuration. Every number the code uses is set here; see src/kerala_hazard_vision_ai/config.py.
 
 data:
   tile_size: 256          # pixels (2.56 km at 10 m)
@@ -12,7 +12,7 @@ data:
   check_scale_m: 100      # coarse scale for the quick cloud-free check
   min_valid_frac: 0.6     # drop an event if less of its area has a clear composite
   rain_days_before: 7     # CHIRPS accumulation window ending on the event day
-  drive_folder: disastergen
+  drive_folder: kerala_hazard_vision_ai
   test_event: pettimudi_2020
 
 severity:

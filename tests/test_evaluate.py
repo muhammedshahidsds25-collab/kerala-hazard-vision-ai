@@ -7,9 +7,9 @@ import pytest
 import torch
 from conftest import write_tile
 
-from disastergen.data.dataset import TileDataset, compute_stats
-from disastergen.diffusion_baseline import render_prompts
-from disastergen.evaluate import (
+from kerala_hazard_vision_ai.data.dataset import TileDataset, compute_stats
+from kerala_hazard_vision_ai.diffusion_baseline import render_prompts
+from kerala_hazard_vision_ai.evaluate import (
     evaluate_identity,
     evaluate_model,
     image_metrics,
@@ -19,7 +19,7 @@ from disastergen.evaluate import (
     save_metrics,
     severity_consistency,
 )
-from disastergen.models import UNetGenerator
+from kerala_hazard_vision_ai.models import UNetGenerator
 
 
 def test_identical_images_perfect():

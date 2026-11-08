@@ -5,8 +5,8 @@ from datetime import date
 
 import pytest
 
-from disastergen.config import DataConfig
-from disastergen.data.gee_export import composite_windows, dry_season_before
+from kerala_hazard_vision_ai.config import DataConfig
+from kerala_hazard_vision_ai.data.gee_export import composite_windows, dry_season_before
 
 
 def test_composite_windows_are_matching_dry_seasons(cfg):

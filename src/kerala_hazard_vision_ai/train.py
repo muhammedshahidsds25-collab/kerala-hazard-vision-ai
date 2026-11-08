@@ -2,9 +2,9 @@
 
 Usage (on Colab, with tiles and checkpoints on Google Drive)::
 
-    python -m disastergen.train --config configs/default.yaml \
-        --tiles /content/drive/MyDrive/disastergen/tiles \
-        --checkpoint-dir /content/drive/MyDrive/disastergen/checkpoints --resume
+    python -m kerala_hazard_vision_ai.train --config configs/default.yaml \
+        --tiles /content/drive/MyDrive/kerala_hazard_vision_ai/tiles \
+        --checkpoint-dir /content/drive/MyDrive/kerala_hazard_vision_ai/checkpoints --resume
 
 ``last.pt`` is written after every epoch, so a dropped Colab session loses at most one epoch.
 """
@@ -25,14 +25,14 @@ import torch
 from torch import nn
 from torch.utils.data import DataLoader
 
-from disastergen.config import Config, TrainConfig, load_config
-from disastergen.data.dataset import (
+from kerala_hazard_vision_ai.config import Config, TrainConfig, load_config
+from kerala_hazard_vision_ai.data.dataset import (
     TileDataset,
     compute_stats,
     split_by_event,
     weighted_sampler,
 )
-from disastergen.models import PatchDiscriminator, UNetGenerator, build_models
+from kerala_hazard_vision_ai.models import PatchDiscriminator, UNetGenerator, build_models
 
 logger = logging.getLogger(__name__)
 

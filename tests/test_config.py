@@ -4,7 +4,7 @@ import shutil
 
 import pytest
 
-from disastergen.config import load_config
+from kerala_hazard_vision_ai.config import load_config
 
 
 def test_default_config_loads(cfg):

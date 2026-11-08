@@ -14,10 +14,10 @@ from datetime import date
 import numpy as np
 import torch
 
-from disastergen.config import Config, DemoConfig
-from disastergen.data.dataset import ChannelStats, build_input, to_reflectance
-from disastergen.evaluate import rgb_uint8
-from disastergen.models import UNetGenerator
+from kerala_hazard_vision_ai.config import Config, DemoConfig
+from kerala_hazard_vision_ai.data.dataset import ChannelStats, build_input, to_reflectance
+from kerala_hazard_vision_ai.evaluate import rgb_uint8
+from kerala_hazard_vision_ai.models import UNetGenerator
 
 KM_PER_DEG_LAT = 110.574
 KM_PER_DEG_LON_AT_EQUATOR = 111.320
@@ -123,7 +123,7 @@ def fetch_area(bbox: BBox, cfg: Config, today: date | None = None) -> tuple[np.n
     """
     import geemap
 
-    from disastergen.data import gee_export as gx
+    from kerala_hazard_vision_ai.data import gee_export as gx
 
     validate_area(bbox, cfg.demo)
     region = gx.aoi(bbox)

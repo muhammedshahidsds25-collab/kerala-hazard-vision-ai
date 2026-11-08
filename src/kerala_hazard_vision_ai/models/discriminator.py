@@ -10,7 +10,7 @@ from __future__ import annotations
 import torch
 from torch import nn
 
-from disastergen.models.generator import LEAKY_SLOPE, MAX_CHANNEL_MULT
+from kerala_hazard_vision_ai.models.generator import LEAKY_SLOPE, MAX_CHANNEL_MULT
 
 
 class PatchDiscriminator(nn.Module):

@@ -5,7 +5,7 @@ from pathlib import Path
 import numpy as np
 import pytest
 
-from disastergen.config import Config, load_config
+from kerala_hazard_vision_ai.config import Config, load_config
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
 DEFAULT_CONFIG = REPO_ROOT / "configs" / "default.yaml"
