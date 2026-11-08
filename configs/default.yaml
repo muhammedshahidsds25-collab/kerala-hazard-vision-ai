@@ -35,7 +35,7 @@ train:
   beta2: 0.999
   l1_weight: 100.0
   seed: 42
-  severe_threshold: 0.05  # tiles above this severity are oversampled
+  severe_threshold: 0.02  # tiles above this severity are oversampled (real tiles peak at ~0.11)
   val_frac: 0.1
   num_workers: 2          # Colab has 2 CPU cores
   checkpoint_dir: checkpoints
@@ -43,8 +43,8 @@ train:
 demo:
   kerala_bbox: [74.85, 8.17, 77.42, 12.80]
   max_demo_area_km2: 25.0
-  sweep: [0.1, 0.3, 0.6, 1.0]
-  train_severity_max: 1.0  # overwritten after the data step with the observed maximum
+  sweep: [0.01, 0.03, 0.06, 0.10]  # severity = share of the tile that changed
+  train_severity_max: 0.11  # highest severity seen in training tiles (measured: 0.108)
 
 eval:
   rgb_max: 0.3            # reflectance mapped to white in RGB figures and image metrics
