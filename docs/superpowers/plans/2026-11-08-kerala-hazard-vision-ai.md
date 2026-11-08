@@ -14,7 +14,7 @@ and human raters.
 - Pure-numpy and torch code is unit-tested on CPU. Code that calls Earth Engine or the GPU is
   exercised only in the notebooks.
 
-**Tech Stack:** Python 3.10+, PyTorch, torchmetrics (with torch-fidelity for FID), numpy, PyYAML,
+**Tech Stack:** Python 3.12+, PyTorch, torchmetrics (with torch-fidelity for FID), numpy, PyYAML,
 earthengine-api, geemap, rasterio, diffusers, pytest, ruff, GitHub Actions.
 
 **Spec:** `docs/superpowers/specs/2026-11-08-kerala-hazard-vision-ai-design.md`

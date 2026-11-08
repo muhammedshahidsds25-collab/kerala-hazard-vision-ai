@@ -11,13 +11,12 @@ import dataclasses
 from dataclasses import dataclass, field
 from datetime import date
 from pathlib import Path
-from typing import Any, TypeVar
+from typing import Any
 
 import yaml
 
 HAZARDS = ("flood", "landslide")
 
-T = TypeVar("T")
 
 
 @dataclass(frozen=True)
@@ -137,7 +136,7 @@ class Config:
     events: tuple[Event, ...] = ()
 
 
-def _build(cls: type[T], raw: dict[str, Any] | None, section: str) -> T:
+def _build[T](cls: type[T], raw: dict[str, Any] | None, section: str) -> T:
     """Instantiate a config dataclass, rejecting unknown keys and turning lists into tuples."""
     raw = raw or {}
     fields = {f.name: f for f in dataclasses.fields(cls)}  # type: ignore[arg-type]
