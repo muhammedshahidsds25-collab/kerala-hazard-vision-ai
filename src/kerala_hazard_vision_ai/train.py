@@ -169,7 +169,7 @@ def prepare_data(
     """
     split = split_by_event(
         list_tiles(tile_dir, (event.name for event in cfg.events)),
-        {cfg.data.test_event},
+        set(cfg.data.test_events),
         cfg.train.val_frac,
         cfg.data.tile_size,
     )

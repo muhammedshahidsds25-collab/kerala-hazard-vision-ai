@@ -5,13 +5,26 @@
 # training events, so this is extra data, not test leakage.
 
 events:
-  # Dropped after the go/no-go check (2026-11-08): the flood water had drained before the
-  # dry-season after-composite (median tile severity 0.0001), so the pair shows no flood.
-  # Floods are future work; its exported tiles are ignored because it is not listed here.
-  # - name: kerala_floods_2018
-  #   hazard: flood
-  #   date: 2018-08-16
-  #   bbox: [76.23, 10.20, 76.43, 10.40]   # Chalakudy river plain
+  # Floods use a near-event after window (the days water was still standing): a dry-season
+  # after image shows drained land. The first export (Chalakudy, 2018) had median tile severity
+  # 0.0001 for exactly that reason, so it was replaced by these events.
+  - name: kuttanad_2018
+    hazard: flood
+    date: 2018-08-16
+    bbox: [76.30, 9.35, 76.50, 9.55]     # Kuttanad, Alappuzha: below sea level, flooded for weeks
+    after: [2018-08-17, 2018-09-10]      # held-out flood test event
+
+  - name: vijayawada_2024
+    hazard: flood
+    date: 2024-09-01
+    bbox: [80.50, 16.45, 80.70, 16.65]   # Budameru floods, NW Vijayawada (Andhra Pradesh)
+    after: [2024-09-02, 2024-09-20]
+
+  - name: sindh_dadu_2022
+    hazard: flood
+    date: 2022-08-27
+    bbox: [67.70, 26.50, 67.90, 26.70]   # Dadu / Manchar Lake, Sindh: water stood for months
+    after: [2022-09-01, 2022-10-15]
 
   - name: kavalappara_2019
     hazard: landslide

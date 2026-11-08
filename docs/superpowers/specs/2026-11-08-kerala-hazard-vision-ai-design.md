@@ -246,3 +246,14 @@ sample the test set. Notebook order: `01_data`, `02_train_pix2pix`, `03_train_di
   results, so the grader never needs to run anything.
 - Open: whether the report lists both names from the topic submission or only the owner.
 - Open: the owner's Earth Engine Cloud project ID, needed before the data step.
+
+## 9. Change after the first data run (2026-11-08)
+
+- The first flood event (Chalakudy 2018) with a dry-season after image showed no flood
+  (median tile severity 0.0001). The owner chose to keep floods with proper data (option A).
+- Events can now set an `after` window. Flood events use near-event windows: Kuttanad 2018
+  (Kerala, held-out flood test event), Vijayawada 2024 and Dadu (Sindh) 2022.
+- `data.test_events` holds one held-out Kerala event per hazard: `pettimudi_2020` and
+  `kuttanad_2018`. Evaluation reports each test event separately.
+- Scene cloud filter raised to 70% and `min_valid_frac` lowered to 0.3, so monsoon flood scenes
+  are usable; clouds are still masked per pixel.

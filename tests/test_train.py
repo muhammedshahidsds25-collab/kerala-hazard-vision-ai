@@ -86,7 +86,7 @@ def tiny_config(cfg, tmp_path, epochs):
     return replace(
         cfg,
         model=TINY,
-        data=replace(cfg.data, test_event="a"),
+        data=replace(cfg.data, test_events=("a",)),
         events=SYNTHETIC_EVENTS,
         train=replace(
             cfg.train, epochs=epochs, batch_size=4, num_workers=0,

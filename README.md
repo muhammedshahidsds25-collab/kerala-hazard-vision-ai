@@ -52,22 +52,25 @@ cloud-free pixels whose change matches the hazard:
 - landslide: an NDVI (vegetation index) drop
 - flood: NDWI (water index) crossing into water
 
-**Events** are listed in [`configs/events.yaml`](configs/events.yaml). Before and after images
-are matching dry-season composites (Dec–Apr) on either side of each event.
-- **Kerala:**
-  - floods 2018 (exported, then dropped: the water had drained before the after image)
+**Events** are listed in [`configs/events.yaml`](configs/events.yaml). Before images are
+dry-season composites (Dec–Apr). Landslide after images are the next dry season (scars stay
+visible for months). Flood after images come from the days the water was still standing.
+- **Kerala floods:** Kuttanad 2018 (held out as the flood test event)
+- **Kerala landslides:**
   - Kavalappara 2019
   - Puthumala 2019
-  - Pettimudi 2020 (held out as the test event)
+  - Pettimudi 2020 (held out as the landslide test event)
   - Kokkayar 2021
   - Wayanad 2024
-- **Extra training data from the Western Ghats:**
+- **Extra flood training data:** Vijayawada 2024 (Andhra Pradesh), Dadu 2022 (Sindh)
+- **Extra landslide training data from the Western Ghats:**
   - Taliye 2021
   - Ambeghar 2021
   - Irshalwadi 2023
   - Shiroor 2024
 
-**Evaluation** uses the held-out Kerala event and compares four methods:
+**Evaluation** uses the two held-out Kerala events (one flood, one landslide) and compares four
+methods on each:
 - pix2pix
 - conditional diffusion
 - an identity baseline ("nothing changes")
@@ -152,9 +155,10 @@ the repo to publish the results.
   visible, such as landslide scars and flooded fields.
 - **Few events:** with 10 events, results describe a small sample, and overlapping tiles make
   the effective sample size smaller than the tile count.
-- **Floods:** dropped. By the dry-season after-image the 2018 flood water had drained (median
-  tile severity 0.0001), so the models are trained on landslides only. Flood mapping needs
-  near-event imagery, e.g. Sentinel-1 radar, which sees through monsoon cloud: future work.
+- **Floods:** flood water drains fast and monsoon cloud hides it, so flood after-images use
+  short near-event windows with per-pixel cloud masking. A first attempt with a dry-season
+  after image (Chalakudy 2018) showed no water at all (median tile severity 0.0001) and was
+  replaced. Sentinel-1 radar, which sees through cloud, would give more flood data: future work.
 - **Soil:** soil texture is a class number treated as a continuous value.
 - **Demo rainfall:** the demo uses a constant rainfall scenario instead of a forecast.
 - **Area check:** the demo checks the Kerala bounding rectangle, not the state border.

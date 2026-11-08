@@ -28,12 +28,15 @@ class Event:
         hazard: Either ``"flood"`` or ``"landslide"``.
         date: Day the event happened.
         bbox: Area of interest as (min_lon, min_lat, max_lon, max_lat) in degrees.
+        after: Optional (start, end) window for the after image. Floods need imagery from
+            the days the water was still standing; without it, the next dry season is used.
     """
 
     name: str
     hazard: str
     date: date
     bbox: tuple[float, float, float, float]
+    after: tuple[date, date] | None = None
 
 
 @dataclass(frozen=True)
@@ -52,7 +55,7 @@ class DataConfig:
     min_valid_frac: float = 0.6
     rain_days_before: int = 7
     drive_folder: str = "kerala_hazard_vision_ai"
-    test_event: str = "pettimudi_2020"
+    test_events: tuple[str, ...] = ("pettimudi_2020", "kuttanad_2018")
 
     def __post_init__(self) -> None:
         """Reject a dry season that does not cross New Year (the date logic relies on it)."""
@@ -174,6 +177,8 @@ def _build_event(raw: dict[str, Any]) -> Event:
         raise ValueError(f"Event '{event.name}': hazard '{event.hazard}' not in {HAZARDS}")
     if len(event.bbox) != 4:
         raise ValueError(f"Event '{event.name}': bbox needs 4 numbers, got {event.bbox}")
+    if event.after is not None and not (len(event.after) == 2 and event.after[0] <= event.after[1]):
+        raise ValueError(f"Event '{event.name}': after must be [start, end], got {event.after}")
     return event
 
 
@@ -199,8 +204,13 @@ def load_config(path: str | Path) -> Config:
     events_raw = yaml.safe_load((path.parent / "events.yaml").read_text()) or {}
     events = tuple(_build_event(e) for e in events_raw.get("events", []))
 
+    data = _build(DataConfig, raw.get("data"), "data")
+    unknown_tests = set(data.test_events) - {event.name for event in events}
+    if unknown_tests:
+        raise ValueError(f"data.test_events not in events.yaml: {sorted(unknown_tests)}")
+
     return Config(
-        data=_build(DataConfig, raw.get("data"), "data"),
+        data=data,
         severity=_build(SeverityConfig, raw.get("severity"), "severity"),
         model=_build(ModelConfig, raw.get("model"), "model"),
         train=_build(TrainConfig, raw.get("train"), "train"),

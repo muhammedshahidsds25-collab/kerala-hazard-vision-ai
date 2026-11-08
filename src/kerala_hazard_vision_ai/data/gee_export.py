@@ -2,7 +2,7 @@
 
 Earth Engine (``ee``) is imported inside the functions that need it, so the rest of the
 package and the test suite work without ``earthengine-api`` installed. Call
-``ee.Initialize(project=...)`` before using any function except :func:`composite_windows`.
+``ee.Initialize(project=...)`` before using any function except the date-window helpers.
 
 Datasets:
     * Sentinel-2 surface reflectance: ``COPERNICUS/S2_SR_HARMONIZED``
@@ -63,14 +63,16 @@ def dry_season_after(day: date, cfg: DataConfig) -> DateWindow:
     return _season(start_year, cfg)
 
 
-def composite_windows(event_date: date, cfg: DataConfig) -> tuple[DateWindow, DateWindow]:
+def composite_windows(event: Event, cfg: DataConfig) -> tuple[DateWindow, DateWindow]:
     """Inclusive date windows for the before and after composites.
 
-    Both are dry seasons (the least cloudy months in Kerala), one before and one after the
-    event, so the comparison is season-matched and monsoon cloud is avoided. Landslide scars
-    stay visible for months, so the after season still shows them.
+    The before image is always the dry season before the event (no flood water, little
+    cloud). Landslide scars stay visible for months, so their after image is the next dry
+    season, which keeps the pair season-matched. Flood water drains within days or weeks, so
+    flood events give their own near-event ``after`` window.
     """
-    return dry_season_before(event_date, cfg), dry_season_after(event_date, cfg)
+    after = event.after or dry_season_after(event.date, cfg)
+    return dry_season_before(event.date, cfg), after
 
 
 def aoi(bbox: tuple[float, float, float, float]) -> ee.Geometry:
@@ -138,7 +140,7 @@ def conditioning(region: ee.Geometry, event: Event, cfg: DataConfig) -> ee.Image
 def event_stack(event: Event, cfg: DataConfig) -> ee.Image:
     """The 11-band stack expected by ``tiling.split_stack``: before, after, slope, rain, soil."""
     region = aoi(event.bbox)
-    (pre_start, pre_end), (post_start, post_end) = composite_windows(event.date, cfg)
+    (pre_start, pre_end), (post_start, post_end) = composite_windows(event, cfg)
     before = s2_composite(region, pre_start, pre_end, cfg.max_cloud_pct)
     after = s2_composite(region, post_start, post_end, cfg.max_cloud_pct)
     return (
@@ -155,7 +157,7 @@ def cloud_free_fraction(event: Event, cfg: DataConfig) -> dict[str, float]:
 
     region = aoi(event.bbox)
     result = {}
-    for name, (start, end) in zip(("pre", "post"), composite_windows(event.date, cfg), strict=True):
+    for name, (start, end) in zip(("pre", "post"), composite_windows(event, cfg), strict=True):
         valid = s2_composite(region, start, end, cfg.max_cloud_pct).select("B4").mask()
         stats = valid.reduceRegion(
             ee.Reducer.mean(), region, scale=cfg.check_scale_m, maxPixels=MAX_PIXELS

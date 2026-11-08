@@ -6,14 +6,14 @@ data:
   max_nodata_frac: 0.2    # drop tiles with more cloud-masked pixels than this
   dry_season_start_month: 12  # before/after composites use the clearest Kerala months:
   dry_season_end_month: 4     # Dec-Apr before the event and Dec-Apr after it (season-matched)
-  max_cloud_pct: 40       # scene-level cloud filter before per-pixel masking
+  max_cloud_pct: 70       # scene filter; clouds are also masked per pixel (floods need monsoon scenes)
   scale_m: 10             # Sentinel-2 visible/NIR resolution
   crs: "EPSG:32643"       # UTM zone 43N covers all of Kerala
   check_scale_m: 100      # coarse scale for the quick cloud-free check
-  min_valid_frac: 0.6     # drop an event if less of its area has a clear composite
+  min_valid_frac: 0.3     # drop an event if less of its area has a clear composite
   rain_days_before: 7     # CHIRPS accumulation window ending on the event day
   drive_folder: kerala_hazard_vision_ai
-  test_event: pettimudi_2020
+  test_events: [pettimudi_2020, kuttanad_2018]  # one held-out Kerala event per hazard
 
 severity:
   ndvi_drop: 0.25         # landslide: vegetation loss that counts as changed
