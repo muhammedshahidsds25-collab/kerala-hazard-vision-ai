@@ -37,3 +37,16 @@ def test_unknown_hazard_raises(tmp_path, default_config_path):
     )
     with pytest.raises(ValueError, match="tsunami"):
         load_config(tmp_path / "default.yaml")
+
+
+def test_test_event_is_in_kerala(cfg):
+    test = next(e for e in cfg.events if e.name == cfg.data.test_event)
+    k_min_lon, k_min_lat, k_max_lon, k_max_lat = cfg.demo.kerala_bbox
+    min_lon, min_lat, max_lon, max_lat = test.bbox
+    assert k_min_lon <= min_lon and max_lon <= k_max_lon
+    assert k_min_lat <= min_lat and max_lat <= k_max_lat
+
+
+def test_extra_western_ghats_events_present(cfg):
+    names = {e.name for e in cfg.events}
+    assert {"taliye_2021", "ambeghar_2021", "irshalwadi_2023", "shiroor_2024"} <= names

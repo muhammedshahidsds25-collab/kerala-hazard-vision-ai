@@ -34,3 +34,25 @@ events:
     hazard: landslide
     date: 2024-07-30
     bbox: [76.03, 11.37, 76.23, 11.57]   # Mundakkai-Chooralmala
+
+  # Extra training events: 2019+ landslides in the Western Ghats outside Kerala, same monsoon
+  # climate and Dec-Apr dry season. They add training data only; testing stays on a Kerala event.
+  - name: taliye_2021
+    hazard: landslide
+    date: 2021-07-22
+    bbox: [73.44, 18.02, 73.64, 18.22]   # Taliye, Mahad, Raigad (Maharashtra)
+
+  - name: ambeghar_2021
+    hazard: landslide
+    date: 2021-07-22
+    bbox: [73.68, 17.30, 73.88, 17.50]   # Ambeghar-Mirgaon, Patan, Satara (Maharashtra)
+
+  - name: irshalwadi_2023
+    hazard: landslide
+    date: 2023-07-19
+    bbox: [73.14, 18.82, 73.34, 19.02]   # Irshalwadi, Khalapur, Raigad (Maharashtra)
+
+  - name: shiroor_2024
+    hazard: landslide
+    date: 2024-07-16
+    bbox: [74.32, 14.56, 74.52, 14.76]   # Shiroor, Ankola, Uttara Kannada (Karnataka)
