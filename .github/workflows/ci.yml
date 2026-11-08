@@ -13,9 +13,9 @@ jobs:
         with:
           python-version: "3.12"  # same as Colab
           cache: pip
-      - name: Install (CPU-only torch)
+      - name: Install (CPU-only torch + matching torchvision)
         run: |
-          pip install torch --index-url https://download.pytorch.org/whl/cpu
+          pip install torch torchvision --index-url https://download.pytorch.org/whl/cpu
           pip install -e ".[dev]"
       - name: Lint
         run: ruff check .

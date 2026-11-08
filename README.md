@@ -96,7 +96,7 @@ Figures will appear in [`outputs/figures/`](outputs/figures/):
 
 ```bash
 python -m venv .venv
-.venv/Scripts/pip install torch --index-url https://download.pytorch.org/whl/cpu   # Linux/macOS: .venv/bin/pip
+.venv/Scripts/pip install torch torchvision --index-url https://download.pytorch.org/whl/cpu   # Linux/macOS: .venv/bin/pip
 .venv/Scripts/pip install -e ".[dev]"
 .venv/Scripts/ruff check .
 .venv/Scripts/pytest
