@@ -184,7 +184,10 @@ def fit(cfg: Config, tile_dir: Path, resume: bool) -> Path:
     history_path = ckpt_dir / "history.csv"
 
     split = split_by_event(
-        sorted(Path(tile_dir).glob("*.npz")), {cfg.data.test_event}, cfg.train.val_frac
+        sorted(Path(tile_dir).glob("*.npz")),
+        {cfg.data.test_event},
+        cfg.train.val_frac,
+        cfg.data.tile_size,
     )
     if not split["train"] or not split["val"]:
         raise ValueError(f"Need train and val tiles, got {({k: len(v) for k, v in split.items()})}")

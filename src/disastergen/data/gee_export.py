@@ -13,6 +13,7 @@ Datasets:
 
 from __future__ import annotations
 
+import calendar
 from datetime import date, timedelta
 from pathlib import Path
 from typing import TYPE_CHECKING
@@ -41,16 +42,35 @@ MAX_PIXELS = 10**10  # Earth Engine request limit; far above one ~2200 px event 
 DateWindow = tuple[date, date]
 
 
+def _season(start_year: int, cfg: DataConfig) -> DateWindow:
+    end_year = start_year + 1  # the season crosses New Year (checked by DataConfig)
+    last_day = calendar.monthrange(end_year, cfg.dry_season_end_month)[1]
+    return (
+        date(start_year, cfg.dry_season_start_month, 1),
+        date(end_year, cfg.dry_season_end_month, last_day),
+    )
+
+
+def dry_season_before(day: date, cfg: DataConfig) -> DateWindow:
+    """The latest complete dry season (default 1 Dec - 30 Apr) that ends before ``day``."""
+    end_year = day.year if day.month > cfg.dry_season_end_month else day.year - 1
+    return _season(end_year - 1, cfg)
+
+
+def dry_season_after(day: date, cfg: DataConfig) -> DateWindow:
+    """The first dry season that starts after ``day``."""
+    start_year = day.year if day.month < cfg.dry_season_start_month else day.year + 1
+    return _season(start_year, cfg)
+
+
 def composite_windows(event_date: date, cfg: DataConfig) -> tuple[DateWindow, DateWindow]:
     """Inclusive date windows for the before and after composites.
 
-    The before window ends the day before the event. The after window starts
-    ``post_offset_days`` later, so it skips the rest of the monsoon and is season-matched.
+    Both are dry seasons (the least cloudy months in Kerala), one before and one after the
+    event, so the comparison is season-matched and monsoon cloud is avoided. Landslide scars
+    stay visible for months, so the after season still shows them.
     """
-    pre = (event_date - timedelta(days=cfg.pre_window_days), event_date - timedelta(days=1))
-    post_start = event_date + timedelta(days=cfg.post_offset_days)
-    post = (post_start, post_start + timedelta(days=cfg.post_window_days))
-    return pre, post
+    return dry_season_before(event_date, cfg), dry_season_after(event_date, cfg)
 
 
 def aoi(bbox: tuple[float, float, float, float]) -> ee.Geometry:

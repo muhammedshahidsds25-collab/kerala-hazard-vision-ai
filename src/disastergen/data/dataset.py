@@ -56,13 +56,14 @@ def _tile_col(path: Path) -> int:
 
 
 def split_by_event(
-    paths: list[Path], test_events: set[str], val_frac: float
+    paths: list[Path], test_events: set[str], val_frac: float, tile_size: int
 ) -> dict[str, list[Path]]:
     """Split tiles into train/val/test so the test event never leaks into training.
 
     Every tile of a test event goes to ``test``. For each remaining event, whole columns of
     tiles are taken from the east edge until at least ``val_frac`` of that event's tiles are
-    in ``val``; the rest go to ``train``.
+    in ``val``. Training tiles that would share pixels with the validation block (tiles wider
+    than the stride overlap) are dropped; the rest go to ``train``.
 
     Raises:
         ValueError: If a test event has no tiles (usually a typo in the config).
@@ -86,8 +87,12 @@ def split_by_event(
             if sum(c in val_cols for c in cols) >= n_val_target:
                 break
             val_cols.add(col)
+        val_start = min(val_cols)
         for path, col in zip(event_paths, cols, strict=True):
-            split["val" if col in val_cols else "train"].append(path)
+            if col in val_cols:
+                split["val"].append(path)
+            elif col + tile_size <= val_start:  # shares no pixel with validation tiles
+                split["train"].append(path)
     return split
 
 

@@ -10,9 +10,9 @@ from disastergen.human_eval import build_survey, save_rgb_pngs, score_survey
 
 @pytest.fixture
 def images(tmp_path):
-    rgb = torch.randint(0, 256, (12, 3, 16, 16), dtype=torch.uint8)
-    real = save_rgb_pngs(rgb[:6], tmp_path / "src", "real")
-    fake = save_rgb_pngs(rgb[6:], tmp_path / "src", "fake")
+    rgb = torch.randint(0, 256, (24, 3, 16, 16), dtype=torch.uint8)
+    real = save_rgb_pngs(rgb[:12], tmp_path / "src", "real")  # real[i] and fake[i]: same tile
+    fake = save_rgb_pngs(rgb[12:], tmp_path / "src", "fake")
     return real, fake
 
 
@@ -43,9 +43,22 @@ def test_build_survey_balanced_and_shuffled(images, tmp_path):
     assert list(key.values()) != [False] * 5 + [True] * 5  # not in source order
 
 
+def test_build_survey_never_shows_both_versions_of_a_tile(images, tmp_path):
+    build_survey(*images, n=6, out_dir=tmp_path / "survey", seed=0)
+    with open(tmp_path / "survey" / "key.csv", newline="") as f:
+        tiles = [row["source"].split("_")[1] for row in csv.DictReader(f)]
+    assert len(set(tiles)) == len(tiles)
+
+
+def test_score_rejects_empty_answers(images, tmp_path):
+    key_path = build_survey(*images, n=6, out_dir=tmp_path / "survey", seed=0)
+    with pytest.raises(ValueError, match="no answers"):
+        score_survey(write_answers(tmp_path / "a.csv", []), key_path)
+
+
 def test_build_survey_rejects_too_few_images(images, tmp_path):
     with pytest.raises(ValueError, match="images"):
-        build_survey(*images, n=20, out_dir=tmp_path / "survey", seed=0)
+        build_survey(*images, n=14, out_dir=tmp_path / "survey", seed=0)
 
 
 def test_score_all_fooled(images, tmp_path):

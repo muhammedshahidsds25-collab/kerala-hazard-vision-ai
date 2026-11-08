@@ -38,21 +38,25 @@ def iter_tiles(
 ) -> Iterator[tuple[int, int, np.ndarray]]:
     """Yield ``(row, col, tile)`` for every full tile with few enough missing pixels.
 
-    A pixel counts as missing if any channel is NaN (e.g. cloud-masked). Tiles above
-    ``max_nodata_frac`` are skipped; the remaining gaps are filled with the per-channel
-    median of the tile so no NaN ever reaches the model.
+    A pixel counts as missing if any channel is NaN (e.g. cloud-masked). Tiles with more than
+    ``max_nodata_frac`` missing pixels are skipped. Yielded tiles may still contain NaN; see
+    :func:`fill_missing`.
     """
     _, height, width = stack.shape
     for row in range(0, height - size + 1, stride):
         for col in range(0, width - size + 1, stride):
             tile = stack[:, row : row + size, col : col + size]
-            missing = ~np.isfinite(tile).all(axis=0)
-            if missing.mean() > max_nodata_frac:
-                continue
-            if missing.any():
-                medians = np.nanmedian(tile[:, ~missing], axis=1)
-                tile = np.where(np.isfinite(tile), tile, medians[:, None, None])
-            yield row, col, tile
+            if (~np.isfinite(tile).all(axis=0)).mean() <= max_nodata_frac:
+                yield row, col, tile
+
+
+def fill_missing(tile: np.ndarray) -> np.ndarray:
+    """Replace missing pixels with the per-channel median of the valid pixels in the tile."""
+    missing = ~np.isfinite(tile).all(axis=0)
+    if not missing.any():
+        return tile
+    medians = np.nanmedian(tile[:, ~missing], axis=1)
+    return np.where(np.isfinite(tile), tile, medians[:, None, None])
 
 
 def write_event_tiles(stack: np.ndarray, event: Event, out_dir: Path, cfg: Config) -> int:
@@ -69,14 +73,16 @@ def write_event_tiles(stack: np.ndarray, event: Event, out_dir: Path, cfg: Confi
     count = 0
     data = cfg.data
     for row, col, tile in iter_tiles(stack, data.tile_size, data.stride, data.max_nodata_frac):
-        before, after, cond = split_stack(tile.astype(np.float32))
+        # Label the raw tile: cloud gaps must not count as change once they are filled.
+        label = severity(*split_stack(tile)[:2], event.hazard, cfg.severity)
+        before, after, cond = split_stack(fill_missing(tile).astype(np.float32))
         np.savez_compressed(
             out_dir / f"{event.name}_r{row}_c{col}.npz",
             before=before,
             after=after,
             cond=cond,
             hazard=HAZARD_CODES[event.hazard],
-            severity=severity(before, after, event.hazard, cfg.severity),
+            severity=label,
             event=event.name,
         )
         count += 1

@@ -44,9 +44,8 @@ class DataConfig:
     tile_size: int = 256
     stride: int = 256
     max_nodata_frac: float = 0.2
-    pre_window_days: int = 120
-    post_window_days: int = 150
-    post_offset_days: int = 90
+    dry_season_start_month: int = 12
+    dry_season_end_month: int = 4
     max_cloud_pct: int = 40
     scale_m: int = 10
     crs: str = "EPSG:32643"
@@ -55,6 +54,14 @@ class DataConfig:
     rain_days_before: int = 7
     drive_folder: str = "disastergen"
     test_event: str = "pettimudi_2020"
+
+    def __post_init__(self) -> None:
+        """Reject a dry season that does not cross New Year (the date logic relies on it)."""
+        if not self.dry_season_end_month < self.dry_season_start_month:
+            raise ValueError(
+                "dry season must cross New Year (end month < start month), got "
+                f"{self.dry_season_start_month}-{self.dry_season_end_month}"
+            )
 
 
 @dataclass(frozen=True)
@@ -102,8 +109,6 @@ class DemoConfig:
     max_demo_area_km2: float = 25.0
     sweep: tuple[float, ...] = (0.1, 0.3, 0.6, 1.0)
     train_severity_max: float = 1.0
-    dry_season_start_month: int = 12
-    dry_season_end_month: int = 4
 
 
 @dataclass(frozen=True)

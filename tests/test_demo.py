@@ -1,7 +1,6 @@
 """Tests for the interactive demo helpers (map and Earth Engine parts run only in Colab)."""
 
 from dataclasses import replace
-from datetime import date
 
 import numpy as np
 import pytest
@@ -12,7 +11,6 @@ from disastergen.demo import (
     crossfade,
     generate_sweep,
     is_extrapolation,
-    latest_dry_season,
     rain_plane_cond,
     validate_area,
 )
@@ -76,11 +74,6 @@ def test_crossfade_endpoints_and_length():
     frames = crossfade([a, b], steps=5)
     assert len(frames) == 5 and np.array_equal(frames[0], a) and np.array_equal(frames[-1], b)
     assert frames[2].dtype == np.uint8 and frames[2].mean() == pytest.approx(100, abs=1)
-
-
-def test_latest_dry_season(cfg):
-    assert latest_dry_season(date(2026, 11, 8), cfg.demo) == (date(2025, 12, 1), date(2026, 4, 30))
-    assert latest_dry_season(date(2026, 3, 1), cfg.demo) == (date(2024, 12, 1), date(2025, 4, 30))
 
 
 def test_rain_plane_cond():

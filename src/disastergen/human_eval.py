@@ -40,20 +40,22 @@ def build_survey(
 ) -> Path:
     """Copy ``n / 2`` real and ``n / 2`` generated images in shuffled order; return the key path.
 
+    ``real[i]`` and ``fake[i]`` must show the same tile. Each tile appears at most once, so a
+    rater never sees the real and the generated version of one place side by side.
+
     Raises:
-        ValueError: If ``n`` is odd or there are not enough images of either kind.
+        ValueError: If ``n`` is odd or there are fewer than ``n`` tiles.
     """
     if n % 2:
         raise ValueError(f"n must be even to balance real and generated images, got {n}")
-    half = n // 2
-    if len(real) < half or len(fake) < half:
-        raise ValueError(
-            f"Need {half} real and {half} generated images, got {len(real)} and {len(fake)}"
-        )
+    n_tiles = min(len(real), len(fake))
+    if n_tiles < n:
+        raise ValueError(f"Need {n} distinct tiles for {n} images, got {n_tiles}")
 
     rng = random.Random(seed)
-    items = [(p, 0) for p in rng.sample(list(real), half)]
-    items += [(p, 1) for p in rng.sample(list(fake), half)]
+    tiles = rng.sample(range(n_tiles), n)
+    half = n // 2
+    items = [(real[i], 0) for i in tiles[:half]] + [(fake[i], 1) for i in tiles[half:]]
     rng.shuffle(items)
 
     out_dir = Path(out_dir)
@@ -77,12 +79,15 @@ def score_survey(answers_csv: Path, key_csv: Path) -> dict[str, float]:
         labelled real) and ``n_raters``.
 
     Raises:
-        ValueError: If an answer names an unknown item or is not "real"/"generated".
+        ValueError: If there are no answers, or an answer names an unknown item or is not
+            "real"/"generated".
     """
     with Path(key_csv).open(newline="") as f:
         key = {row["item"]: row["is_generated"] == "1" for row in csv.DictReader(f)}
     with Path(answers_csv).open(newline="") as f:
         answers = list(csv.DictReader(f))
+    if not answers:
+        raise ValueError(f"{answers_csv} has no answers")
 
     correct = fooled = generated_seen = 0
     for row in answers:

@@ -68,7 +68,7 @@ def test_stats_shape_and_roundtrip(paths, stats, tmp_path):
 
 
 def test_split_is_disjoint_and_complete(paths):
-    split = split_by_event(paths, {"a"}, 0.2)
+    split = split_by_event(paths, {"a"}, 0.2, tile_size=64)
     assert {np.load(p)["event"].item() for p in split["test"]} == {"a"}
     assert not set(split["train"]) & set(split["val"])
     assert sum(len(v) for v in split.values()) == len(paths)
@@ -77,9 +77,18 @@ def test_split_is_disjoint_and_complete(paths):
                                               "b_2020_r0_c1024.npz", "c_r0_c1024.npz"}
 
 
+def test_split_drops_train_tiles_overlapping_validation(paths):
+    # Tiles 256 px wide at 128 px spacing: the column next to the val block overlaps it.
+    split = split_by_event(paths, {"a"}, 0.2, tile_size=256)
+    assert {p.name for p in split["val"]} >= {"c_r0_c1024.npz", "c_r0_c1152.npz"}
+    assert "c_r0_c896.npz" not in {p.name for p in split["train"]}
+    assert "c_r0_c768.npz" in {p.name for p in split["train"]}
+    assert len(split["train"]) == 2 * 7
+
+
 def test_split_rejects_unknown_test_event(paths):
     with pytest.raises(ValueError, match="typo"):
-        split_by_event(paths, {"typo"}, 0.2)
+        split_by_event(paths, {"typo"}, 0.2, tile_size=64)
 
 
 def test_build_input_rejects_bad_severity(stats):

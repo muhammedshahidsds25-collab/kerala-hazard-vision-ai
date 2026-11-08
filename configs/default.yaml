@@ -4,9 +4,8 @@ data:
   tile_size: 256          # pixels (2.56 km at 10 m)
   stride: 128             # 50% overlap: more training tiles from few events
   max_nodata_frac: 0.2    # drop tiles with more cloud-masked pixels than this
-  pre_window_days: 120    # dry-season window before the event for the "before" composite
-  post_offset_days: 90    # skip the monsoon after the event...
-  post_window_days: 150   # ...then composite this many days for the "after" image
+  dry_season_start_month: 12  # before/after composites use the clearest Kerala months:
+  dry_season_end_month: 4     # Dec-Apr before the event and Dec-Apr after it (season-matched)
   max_cloud_pct: 40       # scene-level cloud filter before per-pixel masking
   scale_m: 10             # Sentinel-2 visible/NIR resolution
   crs: "EPSG:32643"       # UTM zone 43N covers all of Kerala
@@ -46,8 +45,6 @@ demo:
   max_demo_area_km2: 25.0
   sweep: [0.1, 0.3, 0.6, 1.0]
   train_severity_max: 1.0  # overwritten after the data step with the observed maximum
-  dry_season_start_month: 12  # demo before image: clearest Kerala months (Dec-Apr)
-  dry_season_end_month: 4
 
 eval:
   rgb_max: 0.3            # reflectance mapped to white in RGB figures and image metrics

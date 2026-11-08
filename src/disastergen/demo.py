@@ -7,7 +7,6 @@ after image at several severities, which the notebook crossfades.
 
 from __future__ import annotations
 
-import calendar
 import math
 from collections.abc import Sequence
 from datetime import date
@@ -58,16 +57,6 @@ def validate_area(bbox: BBox, cfg: DemoConfig) -> None:
 def is_extrapolation(severity: float, cfg: DemoConfig) -> bool:
     """True if the severity is above the highest severity seen in training."""
     return severity > cfg.train_severity_max
-
-
-def latest_dry_season(today: date, cfg: DemoConfig) -> tuple[date, date]:
-    """The most recent complete dry season (default 1 Dec to 30 Apr) before ``today``."""
-    end_year = today.year if today.month > cfg.dry_season_end_month else today.year - 1
-    end_day = calendar.monthrange(end_year, cfg.dry_season_end_month)[1]
-    return (
-        date(end_year - 1, cfg.dry_season_start_month, 1),
-        date(end_year, cfg.dry_season_end_month, end_day),
-    )
 
 
 def rain_plane_cond(slope: np.ndarray, soil: np.ndarray, rain_mm: float) -> np.ndarray:
@@ -138,7 +127,8 @@ def fetch_area(bbox: BBox, cfg: Config, today: date | None = None) -> tuple[np.n
 
     validate_area(bbox, cfg.demo)
     region = gx.aoi(bbox)
-    start, end = latest_dry_season(today or date.today(), cfg.demo)
+    # Same season definition as the training before-images, so the input looks familiar.
+    start, end = gx.dry_season_before(today or date.today(), cfg.data)
     image = (
         gx.s2_composite(region, start, end, cfg.data.max_cloud_pct)
         .addBands(gx.slope_image(region))
