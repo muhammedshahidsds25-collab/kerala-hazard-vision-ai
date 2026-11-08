@@ -16,8 +16,7 @@ import torch
 
 from kerala_hazard_vision_ai.config import Config, DemoConfig
 from kerala_hazard_vision_ai.data.dataset import ChannelStats, build_input, to_reflectance
-from kerala_hazard_vision_ai.evaluate import rgb_uint8
-from kerala_hazard_vision_ai.models import UNetGenerator
+from kerala_hazard_vision_ai.evaluate import Predict, rgb_uint8
 
 KM_PER_DEG_LAT = 110.574
 KM_PER_DEG_LON_AT_EQUATOR = 111.320
@@ -66,7 +65,7 @@ def rain_plane_cond(slope: np.ndarray, soil: np.ndarray, rain_mm: float) -> np.n
 
 @torch.no_grad()
 def generate_sweep(
-    g: UNetGenerator,
+    predict: Predict,
     before: np.ndarray,
     cond: np.ndarray,
     hazard: int,
@@ -74,9 +73,10 @@ def generate_sweep(
     stats: ChannelStats,
     rgb_max: float,
     tile: int,
-    device: torch.device | None = None,
 ) -> list[np.ndarray]:
     """Generate one (H, W, 3) uint8 RGB frame per severity for an area of any size.
+
+    ``predict`` is either model (see ``evaluate.gan_predict`` and ``evaluate.diffusion_predict``).
 
     The area is reflect-padded to a multiple of ``tile``, generated tile by tile (the size the
     model was trained on), then cropped back.
@@ -84,8 +84,6 @@ def generate_sweep(
     Raises:
         ValueError: If a severity is outside [0, 1].
     """
-    device = device or next(g.parameters()).device
-    g = g.eval()
     height, width = before.shape[1:]
     pad = ((0, 0), (0, -height % tile), (0, -width % tile))
     before_p, cond_p = np.pad(before, pad, mode="reflect"), np.pad(cond, pad, mode="reflect")
@@ -96,7 +94,7 @@ def generate_sweep(
         x = build_input(before_p, cond_p, severity, hazard, stats)
         chunks = x.unfold(1, tile, tile).unfold(2, tile, tile)  # (9, rows, cols, tile, tile)
         batch = chunks.permute(1, 2, 0, 3, 4).reshape(rows * cols, x.shape[0], tile, tile)
-        out = to_reflectance(g(batch.to(device)).cpu(), stats)  # (rows*cols, 4, tile, tile)
+        out = to_reflectance(predict(batch), stats)  # (rows*cols, 4, tile, tile)
         mosaic = out.reshape(rows, cols, 4, tile, tile).permute(2, 0, 3, 1, 4)
         mosaic = mosaic.reshape(4, rows * tile, cols * tile)[:, :height, :width]
         frames.append(rgb_uint8(mosaic, rgb_max).permute(1, 2, 0).numpy())

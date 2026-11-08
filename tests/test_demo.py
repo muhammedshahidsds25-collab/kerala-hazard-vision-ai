@@ -14,15 +14,17 @@ from kerala_hazard_vision_ai.demo import (
     rain_plane_cond,
     validate_area,
 )
+from kerala_hazard_vision_ai.evaluate import gan_predict
 from kerala_hazard_vision_ai.models import UNetGenerator
 
+CPU = torch.device("cpu")
 STATS = ChannelStats(np.full(7, 0.1, np.float32), np.full(7, 0.05, np.float32))
 
 
 @pytest.fixture
-def tiny_g():
+def predict():
     torch.manual_seed(0)
-    return UNetGenerator(9, 4, ngf=8, num_downs=6).eval()
+    return gan_predict(UNetGenerator(9, 4, ngf=8, num_downs=6), CPU)
 
 
 def inputs(height, width):
@@ -45,23 +47,23 @@ def test_validate_area_rejects_inverted_bbox(cfg):
         validate_area((76.15, 11.48, 76.13, 11.46), cfg.demo)
 
 
-def test_generate_sweep_frames(tiny_g):
+def test_generate_sweep_frames(predict):
     before, cond = inputs(64, 64)
-    frames = generate_sweep(tiny_g, before, cond, 1, [0.1, 0.6], STATS, rgb_max=0.3, tile=64)
+    frames = generate_sweep(predict, before, cond, 1, [0.1, 0.6], STATS, rgb_max=0.3, tile=64)
     assert len(frames) == 2 and frames[0].dtype == np.uint8 and frames[0].shape == (64, 64, 3)
     assert not np.array_equal(frames[0], frames[1])  # severity changes the output
 
 
-def test_generate_sweep_non_multiple_size(tiny_g):
+def test_generate_sweep_non_multiple_size(predict):
     before, cond = inputs(100, 150)
-    frames = generate_sweep(tiny_g, before, cond, 1, [0.5], STATS, rgb_max=0.3, tile=64)
+    frames = generate_sweep(predict, before, cond, 1, [0.5], STATS, rgb_max=0.3, tile=64)
     assert frames[0].shape == (100, 150, 3)
 
 
-def test_generate_sweep_rejects_bad_severity(tiny_g):
+def test_generate_sweep_rejects_bad_severity(predict):
     before, cond = inputs(64, 64)
     with pytest.raises(ValueError, match="severity"):
-        generate_sweep(tiny_g, before, cond, 1, [1.2], STATS, rgb_max=0.3, tile=64)
+        generate_sweep(predict, before, cond, 1, [1.2], STATS, rgb_max=0.3, tile=64)
 
 
 def test_is_extrapolation(cfg):
