@@ -126,7 +126,7 @@ CI runs the same lint and tests on every push (`.github/workflows/ci.yml`).
 **Full pipeline (Google Colab, T4 GPU):**
 
 You need a free [Earth Engine](https://earthengine.google.com) non-commercial Cloud project.
-Open the notebooks in order and set `GEE_PROJECT` where asked:
+Open the notebooks in order. To use your own Earth Engine project, change `GEE_PROJECT` in 01 and 05:
 
 1. `01_data.ipynb`
    - Checks each event box on a map.
