@@ -120,7 +120,9 @@ def load_checkpoint(path: Path, objects: Mapping[str, Any]) -> int:
     """Restore every named object in place and return the epoch to continue from."""
     state = torch.load(path, map_location="cpu", weights_only=True)
     for name, obj in objects.items():
-        obj.load_state_dict(state[name])
+        # A disabled GradScaler (CPU run) saves {}; skip it so the run can resume on a GPU.
+        if state[name]:
+            obj.load_state_dict(state[name])
     return int(state["epoch"]) + 1
 
 

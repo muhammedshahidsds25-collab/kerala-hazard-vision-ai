@@ -108,3 +108,10 @@ def test_fit_runs_and_resumes(cfg, tile_paths, tmp_path):
     rows = read_history(tmp_path)
     assert [row["epoch"] for row in rows] == ["0", "1"]
     assert all(math.isfinite(float(row["val_l1"])) for row in rows)
+
+
+def test_resume_from_cpu_checkpoint_with_enabled_scaler(tmp_path):
+    # A run started without CUDA saves a disabled (empty) scaler; resuming on a GPU must work.
+    save_checkpoint(tmp_path / "c.pt", 0, {"scaler": torch.amp.GradScaler("cpu", enabled=False)})
+    enabled = torch.amp.GradScaler("cpu", enabled=True)
+    assert load_checkpoint(tmp_path / "c.pt", {"scaler": enabled}) == 1

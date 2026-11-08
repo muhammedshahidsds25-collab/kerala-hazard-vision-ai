@@ -43,11 +43,19 @@ def build_diffusion(cfg: Config) -> ConditionalDiffusion:
     return ConditionalDiffusion(cfg.diffusion, cfg.model, cfg.data.tile_size)
 
 
+def load_diffusion(path: Path, cfg: Config, device: torch.device) -> ConditionalDiffusion:
+    """Load trained EMA weights (``best_ema.pt``) into a fresh model, in eval mode."""
+    model = build_diffusion(cfg)
+    model.load_state_dict(torch.load(path, map_location=device, weights_only=True))
+    return model.to(device).eval()
+
+
 @torch.no_grad()
 def validation_loss(
     model: ConditionalDiffusion, loader: DataLoader, device: torch.device
 ) -> float:
     """Mean denoising loss over a loader, with seeded noise per batch."""
+    model.eval()
     total, count = 0.0, 0
     for batch, (x, y) in enumerate(loader):
         loss = model.loss(x.to(device), y.to(device), seed=VAL_SEED + batch)

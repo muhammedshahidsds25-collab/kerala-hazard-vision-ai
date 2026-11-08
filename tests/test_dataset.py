@@ -10,6 +10,7 @@ from kerala_hazard_vision_ai.data.dataset import (
     TileDataset,
     build_input,
     compute_stats,
+    load_shared_stats,
     split_by_event,
     to_reflectance,
     unnormalise_before,
@@ -109,3 +110,16 @@ def test_sampler_oversamples_severe(paths, stats):
     assert min(severe) > max(calm)
     # Severe and calm tiles end up with equal total sampling weight.
     assert sum(severe) == pytest.approx(sum(calm))
+
+
+def test_load_shared_stats_rejects_different_normalisation(stats, tmp_path):
+    (tmp_path / "a").mkdir()
+    (tmp_path / "b").mkdir()
+    stats.save(tmp_path / "a" / "stats.json")
+    stats.save(tmp_path / "b" / "stats.json")
+    shared = load_shared_stats(tmp_path / "a", tmp_path / "b")
+    assert np.allclose(shared.mean, stats.mean)
+
+    ChannelStats(stats.mean + 1, stats.std).save(tmp_path / "b" / "stats.json")
+    with pytest.raises(ValueError, match="different tiles"):
+        load_shared_stats(tmp_path / "a", tmp_path / "b")

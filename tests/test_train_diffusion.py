@@ -37,3 +37,18 @@ def test_fit_diffusion_runs_and_resumes(cfg, tile_paths, tmp_path):
     history = History(ckpt / "history.csv", ())
     assert history.column("epoch") == [0.0, 1.0]
     assert all(math.isfinite(v) for v in history.column("val_loss"))
+
+
+def test_best_ema_loads_into_fresh_model_and_resume_restores_ema(cfg, tile_paths, tmp_path):
+    import torch
+
+    from kerala_hazard_vision_ai.train_diffusion import load_diffusion
+
+    run_cfg = tiny_config(cfg, tmp_path, epochs=1)
+    best = fit_diffusion(run_cfg, tile_paths[0].parent, resume=False)
+    model = load_diffusion(best, run_cfg, torch.device("cpu"))
+    saved = torch.load(best, weights_only=True)
+    assert all(torch.equal(v, saved[k]) for k, v in model.state_dict().items())
+
+    last = torch.load(tmp_path / "ckpt" / "last.pt", weights_only=True)
+    assert last["ema"]["n_averaged"].item() > 0

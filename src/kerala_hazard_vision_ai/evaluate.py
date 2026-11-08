@@ -1,8 +1,9 @@
-"""Evaluation: image metrics, severity consistency, baselines and figures.
+"""Evaluation: image metrics, severity consistency, speed, baselines and figures.
 
-All methods (pix2pix, the identity baseline, Stable Diffusion) are compared on the same RGB
-rendering (B4, B3, B2 with a fixed reflectance stretch), because Stable Diffusion only produces
-RGB. Severity consistency needs the NIR band, so it is reported for pix2pix only.
+All methods (pix2pix, the conditional diffusion model, the identity baseline and Stable
+Diffusion) are compared on the same RGB rendering (B4, B3, B2 with a fixed reflectance stretch),
+because Stable Diffusion only produces RGB. Severity consistency needs the NIR band, so it is
+reported for the two trained models, which predict all four bands.
 """
 
 from __future__ import annotations

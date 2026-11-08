@@ -4,7 +4,12 @@ import pytest
 import torch
 
 from kerala_hazard_vision_ai.config import ModelConfig
-from kerala_hazard_vision_ai.models import PatchDiscriminator, UNetGenerator, build_models
+from kerala_hazard_vision_ai.models import (
+    PatchDiscriminator,
+    UNetGenerator,
+    build_models,
+    load_generator,
+)
 
 
 def test_generator_shape_and_range():
@@ -47,3 +52,13 @@ def test_init_weights_std():
     g, _ = build_models(ModelConfig(ngf=8, ndf=8, num_downs=6))
     conv = next(m for m in g.modules() if isinstance(m, torch.nn.Conv2d))
     assert 0.01 < conv.weight.std().item() < 0.03
+
+
+def test_load_generator_roundtrip(tmp_path):
+    g, _ = build_models(ModelConfig(ngf=8, ndf=8, num_downs=6))
+    torch.save(g.state_dict(), tmp_path / "g.pt")
+    loaded = load_generator(tmp_path / "g.pt", ModelConfig(ngf=8, ndf=8, num_downs=6),
+                            torch.device("cpu"))
+    assert not loaded.training
+    assert all(torch.equal(a, b) for a, b in
+               zip(g.state_dict().values(), loaded.state_dict().values(), strict=True))

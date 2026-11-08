@@ -43,6 +43,25 @@ class ChannelStats:
         return cls(np.asarray(raw["mean"], np.float32), np.asarray(raw["std"], np.float32))
 
 
+def load_shared_stats(*checkpoint_dirs: Path) -> ChannelStats:
+    """Load ``stats.json`` from several runs and check that they normalise identically.
+
+    Models compared on one test set must share a normalisation, which holds only if they were
+    trained on the same tiles.
+
+    Raises:
+        ValueError: If the runs' statistics differ.
+    """
+    first, *others = (ChannelStats.load(Path(d) / "stats.json") for d in checkpoint_dirs)
+    for other, directory in zip(others, checkpoint_dirs[1:], strict=True):
+        if not (np.allclose(first.mean, other.mean) and np.allclose(first.std, other.std)):
+            raise ValueError(
+                f"{directory} was trained on different tiles than {checkpoint_dirs[0]}; "
+                "retrain it on the current tiles before comparing"
+            )
+    return first
+
+
 def _tile_event(path: Path) -> str:
     with np.load(path) as tile:
         return str(tile["event"])

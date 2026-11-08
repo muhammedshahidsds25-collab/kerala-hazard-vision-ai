@@ -2,6 +2,9 @@
 
 from __future__ import annotations
 
+from pathlib import Path
+
+import torch
 from torch import nn
 
 from kerala_hazard_vision_ai.config import ModelConfig
@@ -10,7 +13,7 @@ from kerala_hazard_vision_ai.models.generator import UNetGenerator
 
 INIT_STD = 0.02  # pix2pix / DCGAN weight initialisation
 
-__all__ = ["PatchDiscriminator", "UNetGenerator", "build_models", "init_weights"]
+__all__ = ["PatchDiscriminator", "UNetGenerator", "build_models", "init_weights", "load_generator"]
 
 
 def init_weights(module: nn.Module, std: float = INIT_STD) -> None:
@@ -32,3 +35,10 @@ def build_models(cfg: ModelConfig) -> tuple[UNetGenerator, PatchDiscriminator]:
     init_weights(generator)
     init_weights(discriminator)
     return generator, discriminator
+
+
+def load_generator(path: Path, cfg: ModelConfig, device: torch.device) -> UNetGenerator:
+    """Load trained generator weights (``best_g.pt``) for inference, in eval mode."""
+    generator = UNetGenerator(cfg.in_channels, cfg.out_channels, cfg.ngf, cfg.num_downs)
+    generator.load_state_dict(torch.load(path, map_location=device, weights_only=True))
+    return generator.to(device).eval()
