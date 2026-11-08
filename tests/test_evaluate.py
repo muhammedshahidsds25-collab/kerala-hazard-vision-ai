@@ -7,11 +7,14 @@ import pytest
 import torch
 from conftest import write_tile
 
+from kerala_hazard_vision_ai.config import DiffusionConfig
 from kerala_hazard_vision_ai.data.dataset import TileDataset, compute_stats
 from kerala_hazard_vision_ai.diffusion_baseline import render_prompts
 from kerala_hazard_vision_ai.evaluate import (
+    diffusion_predict,
     evaluate_identity,
     evaluate_model,
+    gan_predict,
     image_metrics,
     plot_severity_sweep,
     plot_triplets,
@@ -20,6 +23,7 @@ from kerala_hazard_vision_ai.evaluate import (
     severity_consistency,
 )
 from kerala_hazard_vision_ai.models import UNetGenerator
+from kerala_hazard_vision_ai.models.diffusion import ConditionalDiffusion
 
 
 def test_identical_images_perfect():
@@ -74,11 +78,25 @@ def test_identity_baseline_on_unchanged_tiles_is_perfect(same_ds, cfg):
     assert result["ssim"] == pytest.approx(1.0) and result["n_tiles"] == 3
 
 
-def test_evaluate_model_reports_metrics_and_sweep(same_ds, cfg):
+def test_evaluate_model_reports_metrics_sweep_and_speed(same_ds, cfg):
     g = UNetGenerator(9, 4, ngf=8, num_downs=6)
-    result = evaluate_model(g, same_ds, cfg, torch.device("cpu"), with_fid=False)
-    assert {"ssim", "psnr", "n_tiles", "severity_consistency"} <= set(result)
+    result = evaluate_model(gan_predict(g, torch.device("cpu")), same_ds, cfg, with_fid=False)
+    assert {"ssim", "psnr", "n_tiles", "severity_consistency", "sec_per_tile"} <= set(result)
+    assert result["sec_per_tile"] > 0
     assert len(result["severity_sweep"]["requested"]) == 3 * len(cfg.demo.sweep)
+
+
+def test_diffusion_predict_shape_and_determinism(cfg):
+    model = ConditionalDiffusion(
+        DiffusionConfig(block_out_channels=(8, 16), layers_per_block=1, attention_levels=1,
+                        norm_num_groups=4),
+        cfg.model,
+        sample_size=32,
+    )
+    predict = diffusion_predict(model, torch.device("cpu"), steps=2, seed=0)
+    x = torch.randn(2, 9, 32, 32)
+    out = predict(x)
+    assert out.shape == (2, 4, 32, 32) and torch.equal(out, predict(x))
 
 
 def test_plots_write_files(tmp_path):

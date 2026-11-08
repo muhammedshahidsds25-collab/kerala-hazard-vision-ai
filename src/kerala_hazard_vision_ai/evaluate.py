@@ -8,7 +8,8 @@ RGB. Severity consistency needs the NIR band, so it is reported for pix2pix only
 from __future__ import annotations
 
 import json
-from collections.abc import Sequence
+import time
+from collections.abc import Callable, Sequence
 from pathlib import Path
 
 import numpy as np
@@ -24,11 +25,15 @@ from kerala_hazard_vision_ai.config import Config
 from kerala_hazard_vision_ai.data.dataset import TileDataset, to_reflectance, unnormalise_before
 from kerala_hazard_vision_ai.data.severity import HAZARD_CODES, severity
 from kerala_hazard_vision_ai.models import UNetGenerator
+from kerala_hazard_vision_ai.models.diffusion import ConditionalDiffusion
 
 HAZARD_NAMES = {code: name for name, code in HAZARD_CODES.items()}
 SEVERITY_CHANNEL, HAZARD_CHANNEL = 7, 8
 _RGB_INDEX = torch.tensor([2, 1, 0])  # B4, B3, B2 from BANDS order
 FID_BATCH = 32
+
+# Maps a batch of model inputs (N, 9, H, W) to outputs in [-1, 1] (N, 4, H, W), on the CPU.
+Predict = Callable[[torch.Tensor], torch.Tensor]
 
 
 def rgb_uint8(bands4: torch.Tensor, rgb_max: float) -> torch.Tensor:
@@ -89,31 +94,55 @@ def _loader(ds: TileDataset, cfg: Config) -> DataLoader:
     return DataLoader(ds, batch_size=cfg.train.batch_size, shuffle=False)
 
 
-@torch.no_grad()
-def evaluate_model(
-    g: UNetGenerator, ds: TileDataset, cfg: Config, device: torch.device, with_fid: bool = True
-) -> dict:
-    """Score pix2pix on a dataset and run the severity sweep from ``cfg.demo.sweep``.
+def gan_predict(g: UNetGenerator, device: torch.device) -> Predict:
+    """Predictor for pix2pix: one forward pass in eval mode (dropout off, deterministic)."""
+    g = g.to(device).eval()
+
+    @torch.no_grad()
+    def predict(x: torch.Tensor) -> torch.Tensor:
+        return g(x.to(device)).cpu()
+
+    return predict
+
+
+def diffusion_predict(
+    model: ConditionalDiffusion, device: torch.device, steps: int, seed: int
+) -> Predict:
+    """Predictor for the diffusion model: DDIM sampling from fixed-seed noise."""
+    model = model.to(device).eval()
+
+    def predict(x: torch.Tensor) -> torch.Tensor:
+        return model.sample(x.to(device), steps=steps, seed=seed).cpu()
+
+    return predict
+
+
+def evaluate_model(predict: Predict, ds: TileDataset, cfg: Config, with_fid: bool = True) -> dict:
+    """Score a model on a dataset, time it, and run the severity sweep from ``cfg.demo.sweep``.
 
     Each tile is generated at its own measured severity for the image metrics, and again at
     every sweep severity to check that the requested severity controls the measured one.
+    ``sec_per_tile`` is the generation time at the tiles' own severities.
     """
-    g = g.to(device).eval()
     preds, reals, requested, measured = [], [], [], []
+    seconds = 0.0
     for x, y in _loader(ds, cfg):
-        x = x.to(device)
-        preds.append(rgb_uint8(to_reflectance(g(x).cpu(), ds.stats), cfg.eval.rgb_max))
+        start = time.perf_counter()
+        generated = predict(x)
+        seconds += time.perf_counter() - start
+        preds.append(rgb_uint8(to_reflectance(generated, ds.stats), cfg.eval.rgb_max))
         reals.append(rgb_uint8(to_reflectance(y, ds.stats), cfg.eval.rgb_max))
-        before = unnormalise_before(x.cpu(), ds.stats).numpy()
+        before = unnormalise_before(x, ds.stats).numpy()
         hazards = x[:, HAZARD_CHANNEL, 0, 0].round().int().tolist()
         for sev in cfg.demo.sweep:
             swept = x.clone()
             swept[:, SEVERITY_CHANNEL] = sev
-            out = to_reflectance(g(swept).cpu(), ds.stats).numpy()
+            out = to_reflectance(predict(swept), ds.stats).numpy()
             for b, o, h in zip(before, out, hazards, strict=True):
                 requested.append(sev)
                 measured.append(severity(b, o, HAZARD_NAMES[h], cfg.severity))
     result = evaluate_rgb(torch.cat(preds), torch.cat(reals), with_fid)
+    result["sec_per_tile"] = seconds / len(ds)
     result["severity_consistency"] = severity_consistency(np.array(requested), np.array(measured))
     result["severity_sweep"] = {"requested": requested, "measured": measured}
     return result
