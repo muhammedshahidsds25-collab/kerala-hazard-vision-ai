@@ -18,7 +18,9 @@ import json
 import logging
 import math
 import random
+from collections.abc import Mapping, Sequence
 from pathlib import Path
+from typing import Any
 
 import numpy as np
 import torch
@@ -27,6 +29,7 @@ from torch.utils.data import DataLoader
 
 from kerala_hazard_vision_ai.config import Config, TrainConfig, load_config
 from kerala_hazard_vision_ai.data.dataset import (
+    ChannelStats,
     TileDataset,
     compute_stats,
     split_by_event,
@@ -99,43 +102,110 @@ def train_step(
     return {"d_loss": d_loss.item(), "g_gan": g_gan.item(), "g_l1": g_l1.item()}
 
 
-def save_checkpoint(
-    path: Path,
-    epoch: int,
-    g: nn.Module,
-    d: nn.Module,
-    opt_g: torch.optim.Optimizer,
-    opt_d: torch.optim.Optimizer,
-) -> None:
-    """Save models and optimizer state after ``epoch`` (written atomically)."""
+def save_checkpoint(path: Path, epoch: int, objects: Mapping[str, Any]) -> None:
+    """Save the state of models, optimizers and scalers after ``epoch`` (written atomically).
+
+    Args:
+        path: Checkpoint file.
+        epoch: The epoch that just finished.
+        objects: Named objects with ``state_dict()``, e.g. ``{"g": g, "opt_g": opt_g}``.
+    """
+    state = {"epoch": epoch, **{name: obj.state_dict() for name, obj in objects.items()}}
     tmp = Path(path).with_suffix(".tmp")
-    torch.save(
-        {
-            "epoch": epoch,
-            "g": g.state_dict(),
-            "d": d.state_dict(),
-            "opt_g": opt_g.state_dict(),
-            "opt_d": opt_d.state_dict(),
-        },
-        tmp,
-    )
+    torch.save(state, tmp)
     tmp.replace(path)  # a session dying mid-write never corrupts the last good checkpoint
 
 
-def load_checkpoint(
-    path: Path,
-    g: nn.Module,
-    d: nn.Module,
-    opt_g: torch.optim.Optimizer,
-    opt_d: torch.optim.Optimizer,
-) -> int:
-    """Restore a checkpoint in place and return the epoch to continue from."""
+def load_checkpoint(path: Path, objects: Mapping[str, Any]) -> int:
+    """Restore every named object in place and return the epoch to continue from."""
     state = torch.load(path, map_location="cpu", weights_only=True)
-    g.load_state_dict(state["g"])
-    d.load_state_dict(state["d"])
-    opt_g.load_state_dict(state["opt_g"])
-    opt_d.load_state_dict(state["opt_d"])
+    for name, obj in objects.items():
+        obj.load_state_dict(state[name])
     return int(state["epoch"]) + 1
+
+
+class History:
+    """Per-epoch metrics as a CSV file, appended one row at a time."""
+
+    def __init__(self, path: Path, fields: Sequence[str]) -> None:
+        """Use ``path`` with the given column names."""
+        self.path = Path(path)
+        self.fields = tuple(fields)
+
+    def append(self, row: Mapping[str, float]) -> None:
+        """Add one row, writing the header first if the file is new."""
+        new_file = not self.path.exists()
+        with self.path.open("a", newline="") as f:
+            writer = csv.DictWriter(f, fieldnames=self.fields)
+            if new_file:
+                writer.writeheader()
+            writer.writerow(row)
+
+    def column(self, name: str) -> list[float]:
+        """All values of one column (empty if the file does not exist)."""
+        if not self.path.exists():
+            return []
+        with self.path.open(newline="") as f:
+            return [float(row[name]) for row in csv.DictReader(f)]
+
+    def reset(self) -> None:
+        """Delete the file, so a fresh run does not mix with an old one."""
+        self.path.unlink(missing_ok=True)
+
+
+def prepare_data(
+    cfg: Config, tile_dir: Path, ckpt_dir: Path, batch_size: int
+) -> tuple[DataLoader, DataLoader, ChannelStats]:
+    """Split tiles by event, fit normalisation on the training split and build the loaders.
+
+    Also writes ``stats.json`` and ``config.json`` to ``ckpt_dir`` so a run can be reproduced
+    and its model used later with the same normalisation.
+
+    Raises:
+        ValueError: If there are no training or validation tiles.
+    """
+    split = split_by_event(
+        sorted(Path(tile_dir).glob("*.npz")),
+        {cfg.data.test_event},
+        cfg.train.val_frac,
+        cfg.data.tile_size,
+    )
+    counts = {name: len(paths) for name, paths in split.items()}
+    if not split["train"] or not split["val"]:
+        raise ValueError(f"Need train and val tiles, got {counts}")
+    logger.info("Tiles: %s", counts)
+
+    stats = compute_stats(split["train"])
+    stats.save(ckpt_dir / "stats.json")
+    (ckpt_dir / "config.json").write_text(
+        json.dumps(dataclasses.asdict(cfg), indent=2, default=str)
+    )
+    train_ds = TileDataset(split["train"], stats, augment=True)
+    train_loader = DataLoader(
+        train_ds,
+        batch_size=batch_size,
+        sampler=weighted_sampler(train_ds, cfg.train.severe_threshold),
+        num_workers=cfg.train.num_workers,
+    )
+    val_loader = DataLoader(
+        TileDataset(split["val"], stats, augment=False),
+        batch_size=batch_size,
+        num_workers=cfg.train.num_workers,
+    )
+    return train_loader, val_loader, stats
+
+
+def resume_or_start(
+    resume: bool, last_path: Path, objects: Mapping[str, Any], history: History, metric: str
+) -> tuple[int, float]:
+    """Return (first epoch, best validation value so far), restoring ``last_path`` if asked."""
+    if resume and last_path.exists():
+        start_epoch = load_checkpoint(last_path, objects)
+        best = min(history.column(metric), default=math.inf)
+        logger.info("Resumed at epoch %d (best %s %.4f)", start_epoch, metric, best)
+        return start_epoch, best
+    history.reset()
+    return 0, math.inf
 
 
 @torch.no_grad()
@@ -149,22 +219,6 @@ def validation_l1(g: UNetGenerator, loader: DataLoader, device: torch.device) ->
         count += len(x)
     g.train()
     return total / count
-
-
-def _read_history(path: Path) -> list[dict[str, str]]:
-    if not path.exists():
-        return []
-    with path.open(newline="") as f:
-        return list(csv.DictReader(f))
-
-
-def _append_history(path: Path, row: dict[str, float]) -> None:
-    new_file = not path.exists()
-    with path.open("a", newline="") as f:
-        writer = csv.DictWriter(f, fieldnames=HISTORY_FIELDS)
-        if new_file:
-            writer.writeheader()
-        writer.writerow(row)
 
 
 def fit(cfg: Config, tile_dir: Path, resume: bool) -> Path:
@@ -181,47 +235,14 @@ def fit(cfg: Config, tile_dir: Path, resume: bool) -> Path:
     ckpt_dir = Path(cfg.train.checkpoint_dir)
     ckpt_dir.mkdir(parents=True, exist_ok=True)
     last_path, best_path = ckpt_dir / "last.pt", ckpt_dir / "best_g.pt"
-    history_path = ckpt_dir / "history.csv"
+    history = History(ckpt_dir / "history.csv", HISTORY_FIELDS)
 
-    split = split_by_event(
-        sorted(Path(tile_dir).glob("*.npz")),
-        {cfg.data.test_event},
-        cfg.train.val_frac,
-        cfg.data.tile_size,
-    )
-    if not split["train"] or not split["val"]:
-        raise ValueError(f"Need train and val tiles, got {({k: len(v) for k, v in split.items()})}")
-    stats = compute_stats(split["train"])
-    stats.save(ckpt_dir / "stats.json")
-    (ckpt_dir / "config.json").write_text(
-        json.dumps(dataclasses.asdict(cfg), indent=2, default=str)
-    )
-
-    train_ds = TileDataset(split["train"], stats, augment=True)
-    train_loader = DataLoader(
-        train_ds,
-        batch_size=cfg.train.batch_size,
-        sampler=weighted_sampler(train_ds, cfg.train.severe_threshold),
-        num_workers=cfg.train.num_workers,
-    )
-    val_loader = DataLoader(
-        TileDataset(split["val"], stats, augment=False),
-        batch_size=cfg.train.batch_size,
-        num_workers=cfg.train.num_workers,
-    )
-    logger.info("Tiles: %s", {k: len(v) for k, v in split.items()})
-
+    train_loader, val_loader, _ = prepare_data(cfg, tile_dir, ckpt_dir, cfg.train.batch_size)
     g, d = build_models(cfg.model)
     g, d = g.to(device), d.to(device)
     opt_g, opt_d = make_optimizers(g, d, cfg.train)
-
-    start_epoch, best_val = 0, math.inf
-    if resume and last_path.exists():
-        start_epoch = load_checkpoint(last_path, g, d, opt_g, opt_d)
-        best_val = min((float(r["val_l1"]) for r in _read_history(history_path)), default=math.inf)
-        logger.info("Resumed at epoch %d (best val L1 %.4f)", start_epoch, best_val)
-    elif history_path.exists():
-        history_path.unlink()  # fresh run: do not mix with an old history
+    objects = {"g": g, "d": d, "opt_g": opt_g, "opt_d": opt_d}
+    start_epoch, best_val = resume_or_start(resume, last_path, objects, history, "val_l1")
 
     for epoch in range(start_epoch, cfg.train.epochs):
         sums = dict.fromkeys(("d_loss", "g_gan", "g_l1"), 0.0)
@@ -233,12 +254,12 @@ def fit(cfg: Config, tile_dir: Path, resume: bool) -> Path:
                 sums[key] += value
         row = {"epoch": epoch, **{k: v / len(train_loader) for k, v in sums.items()}}
         row["val_l1"] = validation_l1(g, val_loader, device)
-        _append_history(history_path, row)
 
         if row["val_l1"] < best_val:
             best_val = row["val_l1"]
             torch.save(g.state_dict(), best_path)
-        save_checkpoint(last_path, epoch, g, d, opt_g, opt_d)
+        save_checkpoint(last_path, epoch, objects)
+        history.append(row)  # after the checkpoint: a resumed epoch is never logged twice
         logger.info("Epoch %d: %s", epoch, {k: round(v, 4) for k, v in row.items()})
 
     return best_path

@@ -10,6 +10,7 @@ import torch
 from kerala_hazard_vision_ai.config import ModelConfig
 from kerala_hazard_vision_ai.models import build_models
 from kerala_hazard_vision_ai.train import (
+    History,
     fit,
     load_checkpoint,
     make_optimizers,
@@ -51,14 +52,26 @@ def test_train_step_reduces_l1_on_fixed_batch(setup):
 def test_checkpoint_roundtrip_resumes_epoch(setup, tmp_path, cfg):
     g, d, opt_g, opt_d = setup
     train_step(g, d, opt_g, opt_d, *batch(), l1_weight=100.0)  # populate optimizer state
-    save_checkpoint(tmp_path / "c.pt", 4, g, d, opt_g, opt_d)
+    save_checkpoint(tmp_path / "c.pt", 4, {"g": g, "d": d, "opt_g": opt_g, "opt_d": opt_d})
 
     g2, d2 = build_models(TINY)
     opt_g2, opt_d2 = make_optimizers(g2, d2, cfg.train)
-    assert load_checkpoint(tmp_path / "c.pt", g2, d2, opt_g2, opt_d2) == 5
+    objects = {"g": g2, "d": d2, "opt_g": opt_g2, "opt_d": opt_d2}
+    assert load_checkpoint(tmp_path / "c.pt", objects) == 5
     for a, b in zip(g.state_dict().values(), g2.state_dict().values(), strict=True):
         assert torch.equal(a, b)
-    assert opt_g2.state_dict()["state"].keys() == opt_g.state_dict()["state"].keys()
+    first_param = next(iter(opt_g.state_dict()["state"]))
+    assert torch.equal(
+        opt_g.state_dict()["state"][first_param]["exp_avg"],
+        opt_g2.state_dict()["state"][first_param]["exp_avg"],
+    )
+
+
+def test_history_appends_and_reads(tmp_path):
+    history = History(tmp_path / "h.csv", ("epoch", "loss"))
+    history.append({"epoch": 0, "loss": 0.5})
+    history.append({"epoch": 1, "loss": 0.25})
+    assert history.column("loss") == [0.5, 0.25]
 
 
 def test_set_seed_reproducible():
