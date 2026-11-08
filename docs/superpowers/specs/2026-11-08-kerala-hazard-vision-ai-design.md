@@ -194,6 +194,49 @@ The report's introduction and literature survey can be reused from the topic PDF
 - The tile stride and overlap.
 - The GeoTIFF band order.
 
+## 7b. Upgrade: GAN vs diffusion and more data (approved scope change, 2026-11-08)
+
+The owner asked for the best project rather than one that follows the topic PDF to the letter.
+Two upgrades were chosen.
+
+**A. Conditional diffusion model (Palette-style; Saharia et al., 2022)**
+- **Model:** a `diffusers` `UNet2DModel`.
+  - Input: 13 channels, the noisy after image (4) concatenated with the same 9-channel
+    condition pix2pix receives. Output: 4 channels, the predicted noise.
+  - `block_out_channels` = (64, 128, 256, 256), 2 layers per block, attention at the two lowest
+    resolutions. Trained at 256×256, the same tiles as pix2pix.
+- **Training:**
+  - DDPM noise prediction with MSE, a 1000-step cosine schedule, AdamW at lr 1e-4, batch 8.
+  - fp16 autocast with GradScaler on the T4, and an EMA of the weights (decay 0.999).
+  - The same split, normalisation, weighted sampler and resumable checkpoints as pix2pix, via
+    shared helpers in `train.py`.
+- **Sampling:** DDIM with 50 steps and a fixed seed.
+- **Evaluation:** `evaluate_model` takes any `predict(x) -> y` callable, so pix2pix and
+  diffusion are scored by the same code: SSIM, PSNR, FID and severity consistency.
+- **Report story:** GAN vs diffusion on the same data.
+  - Compared on quality metrics, controllability (severity consistency) and sampling time.
+  - Diffusion is stochastic, so it can also show several plausible outcomes for one area.
+- **Demo:** a model toggle (pix2pix / diffusion).
+- **Syllabus:** Module 1 (DDPMs, beyond GANs), Module 2 (FID, human evaluation) and
+  Module 3 (prompting in the SD baseline).
+
+**B. More training data**
+- Add 2019+ landslide events from the Western Ghats with the same monsoon climate, so the
+  Dec–Apr dry season still applies. 2019 and later because Sentinel-2 L2A coverage is global from
+  then. Candidates (centres approximate, checked visually in notebook 01):
+  - Taliye / Mahad, Raigad (22 Jul 2021)
+  - Ambeghar–Mirgaon, Satara (22 Jul 2021)
+  - Irshalwadi, Raigad (19 Jul 2023)
+  - Shiroor, Uttara Kannada (16 Jul 2024)
+- **Not added:** Himalayan events, because their dry season brings snow and needs a different
+  season rule.
+- The test event stays `pettimudi_2020` (Kerala), so the headline result is still "unseen
+  Kerala event". The extra events only add training data.
+
+**Cost:** about 3–5 more hours of Colab GPU for diffusion training, plus about 20 minutes to
+sample the test set. Notebook order: `01_data`, `02_train_pix2pix`, `03_train_diffusion`,
+`04_evaluate`, `05_demo`.
+
 ## 8. Decisions and open items
 
 - Approved 2026-11-08: the full version (pix2pix, diffusion comparison, human evaluation).
