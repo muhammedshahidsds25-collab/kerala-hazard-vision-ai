@@ -110,6 +110,7 @@ Figures will appear in [`outputs/figures/`](outputs/figures/):
 | `configs/` | Every tunable value (`default.yaml`) and the event list (`events.yaml`) |
 | `notebooks/` | Thin Colab drivers, committed with their outputs |
 | `tests/` | pytest suite (CPU-only, no network) |
+| `tools/survey_form.gs` | Google Apps Script that builds the survey form and exports its answers |
 | `docs/superpowers/` | Design spec and implementation plans |
 
 ## Running it
