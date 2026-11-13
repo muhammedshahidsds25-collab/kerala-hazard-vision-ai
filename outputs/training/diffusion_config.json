@@ -1,0 +1,267 @@
+{
+  "data": {
+    "tile_size": 256,
+    "stride": 128,
+    "max_nodata_frac": 0.2,
+    "dry_season_start_month": 12,
+    "dry_season_end_month": 4,
+    "max_cloud_pct": 70,
+    "scale_m": 10,
+    "crs": "EPSG:32643",
+    "check_scale_m": 100,
+    "min_valid_frac": 0.3,
+    "toa_hazards": [
+      "flood"
+    ],
+    "cloud_score_clear": 0.6,
+    "rain_days_before": 7,
+    "drive_folder": "kerala_hazard_vision_ai",
+    "test_events": [
+      "pettimudi_2020",
+      "kuttanad_2018"
+    ]
+  },
+  "severity": {
+    "ndvi_drop": 0.25,
+    "water_ndwi": 0.0,
+    "eps": 1e-06
+  },
+  "model": {
+    "in_channels": 9,
+    "out_channels": 4,
+    "ngf": 64,
+    "ndf": 64,
+    "num_downs": 8
+  },
+  "train": {
+    "epochs": 100,
+    "batch_size": 16,
+    "lr": 0.0002,
+    "beta1": 0.5,
+    "beta2": 0.999,
+    "l1_weight": 100.0,
+    "seed": 42,
+    "severe_threshold": 0.02,
+    "val_frac": 0.1,
+    "num_workers": 2,
+    "checkpoint_dir": "checkpoints"
+  },
+  "demo": {
+    "kerala_bbox": [
+      74.85,
+      8.17,
+      77.42,
+      12.8
+    ],
+    "max_demo_area_km2": 25.0,
+    "sweep": {
+      "landslide": [
+        0.01,
+        0.03,
+        0.06,
+        0.1
+      ],
+      "flood": [
+        0.1,
+        0.3,
+        0.6,
+        0.9
+      ]
+    },
+    "train_severity_max": {
+      "landslide": 0.11,
+      "flood": 0.93
+    }
+  },
+  "eval": {
+    "rgb_max": 0.3,
+    "prompts": [
+      "satellite image of the same area after a {hazard}",
+      "Sentinel-2 satellite photo, top-down view, after a {hazard}, same terrain and rivers",
+      "aerial view after a severe {hazard}, exposed brown soil, destroyed vegetation, debris",
+      "post-disaster satellite imagery, {hazard}, realistic, high detail"
+    ],
+    "sd_model": "stable-diffusion-v1-5/stable-diffusion-v1-5",
+    "sd_strength": 0.5,
+    "sd_steps": 30,
+    "sd_size": 512,
+    "sd_batch_size": 8
+  },
+  "diffusion": {
+    "block_out_channels": [
+      64,
+      128,
+      256,
+      256
+    ],
+    "layers_per_block": 2,
+    "attention_levels": 1,
+    "attention_head_dim": 64,
+    "norm_num_groups": 32,
+    "train_timesteps": 1000,
+    "beta_schedule": "squaredcos_cap_v2",
+    "sample_steps": 50,
+    "epochs": 200,
+    "batch_size": 8,
+    "lr": 0.0001,
+    "ema_decay": 0.999,
+    "mixed_precision": true,
+    "time_budget_hours": 3.5,
+    "checkpoint_dir": "/kaggle/working/checkpoints_diffusion"
+  },
+  "events": [
+    {
+      "name": "kuttanad_2018",
+      "hazard": "flood",
+      "date": "2018-08-16",
+      "bbox": [
+        76.3,
+        9.35,
+        76.5,
+        9.55
+      ],
+      "after": [
+        "2018-08-17",
+        "2018-09-10"
+      ]
+    },
+    {
+      "name": "vijayawada_2024",
+      "hazard": "flood",
+      "date": "2024-09-01",
+      "bbox": [
+        80.5,
+        16.45,
+        80.7,
+        16.65
+      ],
+      "after": [
+        "2024-09-02",
+        "2024-09-20"
+      ]
+    },
+    {
+      "name": "sindh_dadu_2022",
+      "hazard": "flood",
+      "date": "2022-08-27",
+      "bbox": [
+        67.7,
+        26.5,
+        67.9,
+        26.7
+      ],
+      "after": [
+        "2022-09-01",
+        "2022-10-15"
+      ]
+    },
+    {
+      "name": "kavalappara_2019",
+      "hazard": "landslide",
+      "date": "2019-08-08",
+      "bbox": [
+        76.2,
+        11.23,
+        76.4,
+        11.43
+      ],
+      "after": null
+    },
+    {
+      "name": "puthumala_2019",
+      "hazard": "landslide",
+      "date": "2019-08-08",
+      "bbox": [
+        76.08,
+        11.4,
+        76.28,
+        11.6
+      ],
+      "after": null
+    },
+    {
+      "name": "pettimudi_2020",
+      "hazard": "landslide",
+      "date": "2020-08-06",
+      "bbox": [
+        76.92,
+        10.07,
+        77.12,
+        10.27
+      ],
+      "after": null
+    },
+    {
+      "name": "kokkayar_2021",
+      "hazard": "landslide",
+      "date": "2021-10-16",
+      "bbox": [
+        76.75,
+        9.5,
+        76.95,
+        9.7
+      ],
+      "after": null
+    },
+    {
+      "name": "wayanad_2024",
+      "hazard": "landslide",
+      "date": "2024-07-30",
+      "bbox": [
+        76.03,
+        11.37,
+        76.23,
+        11.57
+      ],
+      "after": null
+    },
+    {
+      "name": "taliye_2021",
+      "hazard": "landslide",
+      "date": "2021-07-22",
+      "bbox": [
+        73.44,
+        18.02,
+        73.64,
+        18.22
+      ],
+      "after": null
+    },
+    {
+      "name": "ambeghar_2021",
+      "hazard": "landslide",
+      "date": "2021-07-22",
+      "bbox": [
+        73.68,
+        17.3,
+        73.88,
+        17.5
+      ],
+      "after": null
+    },
+    {
+      "name": "irshalwadi_2023",
+      "hazard": "landslide",
+      "date": "2023-07-19",
+      "bbox": [
+        73.14,
+        18.82,
+        73.34,
+        19.02
+      ],
+      "after": null
+    },
+    {
+      "name": "shiroor_2024",
+      "hazard": "landslide",
+      "date": "2024-07-16",
+      "bbox": [
+        74.32,
+        14.56,
+        74.52,
+        14.76
+      ],
+      "after": null
+    }
+  ]
+}
