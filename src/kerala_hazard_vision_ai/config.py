@@ -111,7 +111,8 @@ class DiffusionConfig:
 
     block_out_channels: tuple[int, ...] = (64, 128, 256, 256)
     layers_per_block: int = 2
-    attention_levels: int = 2
+    attention_levels: int = 1
+    attention_head_dim: int = 64
     norm_num_groups: int = 32
     train_timesteps: int = 1000
     beta_schedule: str = "squaredcos_cap_v2"
@@ -121,6 +122,7 @@ class DiffusionConfig:
     lr: float = 1e-4
     ema_decay: float = 0.999
     mixed_precision: bool = True
+    time_budget_hours: float = 3.5
     checkpoint_dir: str = "checkpoints_diffusion"
 
 

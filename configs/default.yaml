@@ -69,12 +69,15 @@ eval:
 diffusion:                # Palette-style conditional DDPM, compared against pix2pix
   block_out_channels: [64, 128, 256, 256]
   layers_per_block: 2
-  attention_levels: 2     # self-attention in the two lowest-resolution levels
+  attention_levels: 1     # self-attention only at the lowest resolution (32x32): at 64x64 a
+                          # T4 epoch took over 10 min
+  attention_head_dim: 64  # channels per attention head (diffusers default 8 is slow on a T4)
   norm_num_groups: 32
   train_timesteps: 1000
   beta_schedule: squaredcos_cap_v2  # cosine noise schedule (Nichol & Dhariwal, 2021)
   sample_steps: 50        # DDIM steps at inference
-  epochs: 200             # ~3-4 h on a T4 with mixed precision; resumable
+  epochs: 200             # upper bound; the time budget below usually ends training first
+  time_budget_hours: 3.5  # stop before starting an epoch that would end after this
   batch_size: 8
   lr: 1.0e-4
   ema_decay: 0.999        # evaluate an exponential moving average of the weights

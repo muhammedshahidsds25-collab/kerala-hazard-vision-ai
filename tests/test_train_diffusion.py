@@ -23,6 +23,7 @@ def tiny_config(cfg, tmp_path, epochs):
             layers_per_block=1,
             attention_levels=1,
             norm_num_groups=4,
+            attention_head_dim=8,
             epochs=epochs,
             batch_size=4,
             checkpoint_dir=str(tmp_path / "ckpt"),
@@ -55,3 +56,11 @@ def test_best_ema_loads_into_fresh_model_and_resume_restores_ema(cfg, tile_paths
 
     last = torch.load(tmp_path / "ckpt" / "last.pt", weights_only=True)
     assert last["ema"]["n_averaged"].item() > 0
+
+
+def test_time_budget_stops_training_early(cfg, tile_paths, tmp_path):
+    run_cfg = tiny_config(cfg, tmp_path, epochs=5)
+    run_cfg = replace(run_cfg, diffusion=replace(run_cfg.diffusion, time_budget_hours=1e-9))
+    best = fit_diffusion(run_cfg, tile_paths[0].parent, resume=False)
+    assert best.exists()  # the first epoch always runs and is saved
+    assert History(tmp_path / "ckpt" / "history.csv", ()).column("epoch") == [0.0]

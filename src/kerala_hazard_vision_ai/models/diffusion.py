@@ -49,6 +49,7 @@ class ConditionalDiffusion(nn.Module):
             down_block_types=down,
             up_block_types=up,
             norm_num_groups=cfg.norm_num_groups,
+            attention_head_dim=cfg.attention_head_dim,
         )
         self.train_scheduler = DDPMScheduler(
             num_train_timesteps=cfg.train_timesteps,

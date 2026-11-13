@@ -4,10 +4,14 @@ import pytest
 import torch
 
 from kerala_hazard_vision_ai.config import DiffusionConfig, ModelConfig
-from kerala_hazard_vision_ai.models.diffusion import ConditionalDiffusion
+from kerala_hazard_vision_ai.models.diffusion import ConditionalDiffusion, _block_types
 
 TINY = DiffusionConfig(
-    block_out_channels=(8, 16), layers_per_block=1, attention_levels=1, norm_num_groups=4
+    block_out_channels=(8, 16),
+    layers_per_block=1,
+    attention_levels=1,
+    norm_num_groups=4,
+    attention_head_dim=8,
 )
 
 
@@ -64,3 +68,14 @@ def test_loss_drops_on_fixed_batch(model):
         model.loss(x, y, seed=step).backward()
         opt.step()
     assert model.loss(x, y, seed=0).item() < first
+
+
+def test_head_size_is_configurable(model):
+    assert model.unet.config.attention_head_dim == 8
+
+
+def test_default_attention_only_at_lowest_resolution(cfg):
+    # Self-attention at 64x64 made one T4 epoch take over 10 minutes; 32x32 only is fast.
+    down, up = _block_types(cfg.diffusion)
+    assert [b.startswith("Attn") for b in down] == [False, False, False, True]
+    assert up[0].startswith("Attn") and not any(b.startswith("Attn") for b in up[1:])

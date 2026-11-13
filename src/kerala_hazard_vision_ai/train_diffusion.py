@@ -16,6 +16,7 @@ from __future__ import annotations
 import argparse
 import dataclasses
 import logging
+import time
 from pathlib import Path
 
 import torch
@@ -35,6 +36,7 @@ from kerala_hazard_vision_ai.train import (
 logger = logging.getLogger(__name__)
 
 HISTORY_FIELDS = ("epoch", "train_loss", "val_loss")
+PROGRESS_EVERY = 50  # training steps between speed log lines
 VAL_SEED = 0  # fixed noise and timesteps, so validation losses are comparable across epochs
 
 
@@ -91,9 +93,12 @@ def fit_diffusion(cfg: Config, tile_dir: Path, resume: bool) -> Path:
     objects = {"model": model, "ema": ema, "optimizer": optimizer, "scaler": scaler}
     start_epoch, best_val = resume_or_start(resume, last_path, objects, history, "val_loss")
 
+    started = time.monotonic()
+    budget_s = dcfg.time_budget_hours * 3600
     for epoch in range(start_epoch, dcfg.epochs):
+        epoch_start = time.monotonic()
         total = 0.0
-        for x, y in train_loader:
+        for step, (x, y) in enumerate(train_loader, start=1):
             optimizer.zero_grad(set_to_none=True)
             with torch.autocast(device.type, dtype=torch.float16, enabled=use_amp):
                 loss = model.loss(x.to(device), y.to(device))
@@ -102,6 +107,10 @@ def fit_diffusion(cfg: Config, tile_dir: Path, resume: bool) -> Path:
             scaler.update()
             ema.update_parameters(model)
             total += loss.item()
+            if step % PROGRESS_EVERY == 0:
+                seconds = time.monotonic() - epoch_start
+                logger.info("Epoch %d step %d/%d: %.2f s/step", epoch, step, len(train_loader),
+                            seconds / step)
         row = {
             "epoch": epoch,
             "train_loss": total / len(train_loader),
@@ -114,6 +123,12 @@ def fit_diffusion(cfg: Config, tile_dir: Path, resume: bool) -> Path:
         save_checkpoint(last_path, epoch, objects)
         history.append(row)
         logger.info("Epoch %d: %s", epoch, {k: round(v, 5) for k, v in row.items()})
+
+        elapsed = time.monotonic() - started
+        epochs_done = epoch - start_epoch + 1
+        if elapsed + elapsed / epochs_done > budget_s:  # next epoch would overrun the budget
+            logger.info("Time budget %.1f h reached after epoch %d", dcfg.time_budget_hours, epoch)
+            break
 
     return best_path
 

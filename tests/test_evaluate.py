@@ -91,7 +91,7 @@ def test_evaluate_model_reports_metrics_sweep_and_speed(same_ds, cfg):
 def test_diffusion_predict_shape_and_determinism(cfg):
     model = ConditionalDiffusion(
         DiffusionConfig(block_out_channels=(8, 16), layers_per_block=1, attention_levels=1,
-                        norm_num_groups=4),
+                        norm_num_groups=4, attention_head_dim=8),
         cfg.model,
         sample_size=32,
     )
