@@ -4,7 +4,7 @@ import shutil
 
 import pytest
 
-from kerala_hazard_vision_ai.config import load_config
+from kerala_hazard_vision_ai.config import DemoConfig, load_config
 
 
 def test_default_config_loads(cfg):
@@ -66,3 +66,15 @@ def test_unknown_test_event_in_config_raises(tmp_path, default_config_path):
 def test_extra_western_ghats_events_present(cfg):
     names = {e.name for e in cfg.events}
     assert {"taliye_2021", "ambeghar_2021", "irshalwadi_2023", "shiroor_2024"} <= names
+
+
+def test_sweep_and_severity_max_per_hazard(cfg):
+    assert set(cfg.demo.sweep) == set(cfg.demo.train_severity_max) == {"flood", "landslide"}
+    assert len({len(sweep) for sweep in cfg.demo.sweep.values()}) == 1  # same number of steps
+    for hazard, sweep in cfg.demo.sweep.items():
+        assert all(0 < s <= cfg.demo.train_severity_max[hazard] for s in sweep)
+
+
+def test_sweeps_of_different_length_raise():
+    with pytest.raises(ValueError, match="same number"):
+        DemoConfig(sweep={"landslide": (0.1, 0.2), "flood": (0.5,)})

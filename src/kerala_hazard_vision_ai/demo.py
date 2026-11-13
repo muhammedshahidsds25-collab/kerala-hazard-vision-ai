@@ -53,9 +53,9 @@ def validate_area(bbox: BBox, cfg: DemoConfig) -> None:
         )
 
 
-def is_extrapolation(severity: float, cfg: DemoConfig) -> bool:
-    """True if the severity is above the highest severity seen in training."""
-    return severity > cfg.train_severity_max
+def is_extrapolation(severity: float, hazard: str, cfg: DemoConfig) -> bool:
+    """True if the severity is above the highest severity seen in training for that hazard."""
+    return severity > cfg.train_severity_max[hazard]
 
 
 def rain_plane_cond(slope: np.ndarray, soil: np.ndarray, rain_mm: float) -> np.ndarray:

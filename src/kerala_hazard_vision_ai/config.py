@@ -126,12 +126,28 @@ class DiffusionConfig:
 
 @dataclass(frozen=True)
 class DemoConfig:
-    """Interactive demo limits."""
+    """Interactive demo limits and per-hazard severity sweeps.
+
+    Severity is the share of a tile that changed, which differs a lot by hazard (a landslide
+    scar covers a few percent of a tile, a flood most of it), so sweeps are set per hazard.
+    """
 
     kerala_bbox: tuple[float, float, float, float] = (74.85, 8.17, 77.42, 12.80)
     max_demo_area_km2: float = 25.0
-    sweep: tuple[float, ...] = (0.1, 0.3, 0.6, 1.0)
-    train_severity_max: float = 1.0
+    sweep: dict[str, tuple[float, ...]] = field(
+        default_factory=lambda: {
+            "landslide": (0.01, 0.03, 0.06, 0.10),
+            "flood": (0.1, 0.3, 0.6, 0.9),
+        }
+    )
+    train_severity_max: dict[str, float] = field(
+        default_factory=lambda: {"landslide": 0.11, "flood": 0.93}
+    )
+
+    def __post_init__(self) -> None:
+        """Require the same number of sweep steps per hazard (evaluation runs them in lockstep)."""
+        if len({len(steps) for steps in self.sweep.values()}) > 1:
+            raise ValueError(f"Every hazard needs the same number of sweep steps: {self.sweep}")
 
 
 @dataclass(frozen=True)

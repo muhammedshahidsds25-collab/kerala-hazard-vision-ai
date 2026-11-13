@@ -119,7 +119,7 @@ def diffusion_predict(
 
 
 def evaluate_model(predict: Predict, ds: TileDataset, cfg: Config, with_fid: bool = True) -> dict:
-    """Score a model on a dataset, time it, and run the severity sweep from ``cfg.demo.sweep``.
+    """Score a model on a dataset, time it, and run each tile's hazard sweep from ``cfg.demo``.
 
     Each tile is generated at its own measured severity for the image metrics, and again at
     every sweep severity to check that the requested severity controls the measured one.
@@ -135,12 +135,14 @@ def evaluate_model(predict: Predict, ds: TileDataset, cfg: Config, with_fid: boo
         reals.append(rgb_uint8(to_reflectance(y, ds.stats), cfg.eval.rgb_max))
         before = unnormalise_before(x, ds.stats).numpy()
         hazards = x[:, HAZARD_CHANNEL, 0, 0].round().int().tolist()
-        for sev in cfg.demo.sweep:
+        sweeps = [cfg.demo.sweep[HAZARD_NAMES[h]] for h in hazards]  # one sweep per tile
+        for step in range(len(sweeps[0])):
+            levels = [sweep[step] for sweep in sweeps]
             swept = x.clone()
-            swept[:, SEVERITY_CHANNEL] = sev
+            swept[:, SEVERITY_CHANNEL] = torch.tensor(levels)[:, None, None]
             out = to_reflectance(predict(swept), ds.stats).numpy()
-            for b, o, h in zip(before, out, hazards, strict=True):
-                requested.append(sev)
+            for b, o, h, level in zip(before, out, hazards, levels, strict=True):
+                requested.append(level)
                 measured.append(severity(b, o, HAZARD_NAMES[h], cfg.severity))
     result = evaluate_rgb(torch.cat(preds), torch.cat(reals), with_fid)
     result["sec_per_tile"] = seconds / len(ds)

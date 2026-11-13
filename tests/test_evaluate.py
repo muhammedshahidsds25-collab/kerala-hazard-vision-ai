@@ -83,7 +83,9 @@ def test_evaluate_model_reports_metrics_sweep_and_speed(same_ds, cfg):
     result = evaluate_model(gan_predict(g, torch.device("cpu")), same_ds, cfg, with_fid=False)
     assert {"ssim", "psnr", "n_tiles", "severity_consistency", "sec_per_tile"} <= set(result)
     assert result["sec_per_tile"] > 0
-    assert len(result["severity_sweep"]["requested"]) == 3 * len(cfg.demo.sweep)
+    sweep = cfg.demo.sweep["landslide"]  # the synthetic tiles are landslides
+    assert len(result["severity_sweep"]["requested"]) == 3 * len(sweep)
+    assert set(result["severity_sweep"]["requested"]) == set(sweep)
 
 
 def test_diffusion_predict_shape_and_determinism(cfg):

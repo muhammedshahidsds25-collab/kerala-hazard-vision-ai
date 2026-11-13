@@ -67,8 +67,8 @@ def test_generate_sweep_rejects_bad_severity(predict):
 
 
 def test_is_extrapolation(cfg):
-    demo = replace(cfg.demo, train_severity_max=0.8)
-    assert is_extrapolation(0.95, demo) and not is_extrapolation(0.5, demo)
+    demo = replace(cfg.demo, train_severity_max={"landslide": 0.1, "flood": 0.9})
+    assert is_extrapolation(0.5, "landslide", demo) and not is_extrapolation(0.5, "flood", demo)
 
 
 def test_crossfade_endpoints_and_length():
