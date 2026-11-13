@@ -146,6 +146,10 @@ Open the notebooks in order. To use your own Earth Engine project, change `GEE_P
    - Opens the interactive map: draw an area, pick the model, hazard and rainfall, then
      crossfade through the severities.
 
+Both training notebooks resume from the last epoch when re-run. To train the diffusion model on
+Kaggle instead (keeps running in the background), use `kaggle_pack_tiles` (on Colab) and then
+`kaggle_train_diffusion` (on Kaggle); instructions are at the top of each.
+
 Both training notebooks resume from the last epoch when re-run. Tiles, checkpoints and outputs
 live in `MyDrive/kerala_hazard_vision_ai/`. Copy `outputs/` and the executed notebooks back into
 the repo to publish the results.
