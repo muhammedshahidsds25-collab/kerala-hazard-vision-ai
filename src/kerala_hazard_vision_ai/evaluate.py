@@ -23,8 +23,14 @@ from torchmetrics.functional.image import (
 )
 
 from kerala_hazard_vision_ai.config import Config
-from kerala_hazard_vision_ai.data.dataset import TileDataset, to_reflectance, unnormalise_before
-from kerala_hazard_vision_ai.data.severity import HAZARD_CODES, severity
+from kerala_hazard_vision_ai.data.dataset import (
+    ChannelStats,
+    TileDataset,
+    scale_target,
+    to_reflectance,
+    unnormalise_before,
+)
+from kerala_hazard_vision_ai.data.severity import HAZARD_CODES, change_mask, severity
 from kerala_hazard_vision_ai.models import UNetGenerator
 from kerala_hazard_vision_ai.models.diffusion import ConditionalDiffusion
 
@@ -158,6 +164,64 @@ def evaluate_identity(ds: TileDataset, cfg: Config, with_fid: bool = True) -> di
         preds.append(rgb_uint8(unnormalise_before(x, ds.stats), cfg.eval.rgb_max))
         reals.append(rgb_uint8(to_reflectance(y, ds.stats), cfg.eval.rgb_max))
     return evaluate_rgb(torch.cat(preds), torch.cat(reals), with_fid)
+
+
+def identity_predict(stats: ChannelStats) -> Predict:
+    """Baseline predictor: the after image equals the before image ("nothing changes")."""
+
+    def predict(x: torch.Tensor) -> torch.Tensor:
+        return scale_target(unnormalise_before(x, stats).numpy(), stats)
+
+    return predict
+
+
+def damage_scores(tp: int, fp: int, fn: int) -> dict[str, float]:
+    """Precision, recall, F1 and IoU of predicted vs real change pixels (0.0 when undefined)."""
+
+    def ratio(num: int, den: int) -> float:
+        return num / den if den else 0.0
+
+    return {
+        "precision": ratio(tp, tp + fp),
+        "recall": ratio(tp, tp + fn),
+        "f1": ratio(2 * tp, 2 * tp + fp + fn),
+        "iou": ratio(tp, tp + fp + fn),
+    }
+
+
+@torch.no_grad()
+def evaluate_damage(predict: Predict, ds: TileDataset, cfg: Config) -> dict:
+    """Score whether a model puts damage where it really happened.
+
+    Whole-tile SSIM/PSNR reward copying the before image, because most of a disaster scene does
+    not change. This complements them with two damage-focused views:
+
+    * ``damage``: pixel-level precision/recall/F1/IoU between the change mask of the generated
+      image and that of the real after image (same rule as the severity labels). The identity
+      baseline scores 0 here by construction.
+    * ``changed_tiles``: SSIM/PSNR on the tiles whose real severity is above
+      ``cfg.train.severe_threshold`` only.
+    """
+    tp = fp = fn = 0
+    preds, reals = [], []
+    for x, y in _loader(ds, cfg):
+        generated = to_reflectance(predict(x), ds.stats)
+        real = to_reflectance(y, ds.stats)
+        before = unnormalise_before(x, ds.stats).numpy()
+        hazards = x[:, HAZARD_CHANNEL, 0, 0].round().int().tolist()
+        for b, r, g, h in zip(before, real.numpy(), generated.numpy(), hazards, strict=True):
+            real_mask = change_mask(b, r, HAZARD_NAMES[h], cfg.severity)
+            gen_mask = change_mask(b, g, HAZARD_NAMES[h], cfg.severity)
+            tp += int((real_mask & gen_mask).sum())
+            fp += int((~real_mask & gen_mask).sum())
+            fn += int((real_mask & ~gen_mask).sum())
+        preds.append(rgb_uint8(generated, cfg.eval.rgb_max))
+        reals.append(rgb_uint8(real, cfg.eval.rgb_max))
+    changed = torch.from_numpy(np.flatnonzero(ds.severities > cfg.train.severe_threshold))
+    changed_tiles: dict[str, float] = {"n_tiles": len(changed)}
+    if len(changed):
+        changed_tiles |= image_metrics(torch.cat(preds)[changed], torch.cat(reals)[changed])
+    return {"damage": damage_scores(tp, fp, fn), "changed_tiles": changed_tiles}
 
 
 def save_metrics(results: dict, path: Path = Path("outputs/metrics.json")) -> None:

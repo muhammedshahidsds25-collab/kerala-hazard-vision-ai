@@ -11,10 +11,13 @@ from kerala_hazard_vision_ai.config import DiffusionConfig
 from kerala_hazard_vision_ai.data.dataset import TileDataset, compute_stats
 from kerala_hazard_vision_ai.diffusion_baseline import render_prompts
 from kerala_hazard_vision_ai.evaluate import (
+    damage_scores,
     diffusion_predict,
+    evaluate_damage,
     evaluate_identity,
     evaluate_model,
     gan_predict,
+    identity_predict,
     image_metrics,
     plot_comparison,
     plot_severity_sweep,
@@ -108,3 +111,51 @@ def test_plots_write_files(tmp_path):
     assert len(fig.axes) == 2 * 4  # 2 tiles x 4 columns
     plot_severity_sweep(rgb[0], [rgb[0], rgb[1]], [0.1, 0.6], tmp_path / "s.png")
     assert (tmp_path / "t.png").stat().st_size > 0 and (tmp_path / "s.png").stat().st_size > 0
+
+
+def test_damage_scores_counts():
+    assert damage_scores(tp=8, fp=2, fn=8) == pytest.approx(
+        {"precision": 0.8, "recall": 0.5, "f1": 8 / 13, "iou": 8 / 18}
+    )
+    nothing = {"precision": 0.0, "recall": 0.0, "f1": 0.0, "iou": 0.0}
+    assert damage_scores(tp=0, fp=0, fn=5) == nothing
+
+
+def _landslide_tiles(tmp_path, n_changed=2, n_calm=2):
+    """Tiles whose left half loses vegetation (changed) or stays the same (calm)."""
+    rng = np.random.default_rng(0)
+    paths = []
+    for i in range(n_changed + n_calm):
+        vegetation = np.array([0.05, 0.08, 0.05, 0.40], np.float32)[:, None, None]
+        # Realistic spread, so the +-3 sigma target scaling keeps the damage visible.
+        before = (vegetation + rng.normal(0, 0.05, (4, 64, 64))).clip(0.01, 1).astype(np.float32)
+        after = before.copy()
+        sev = 0.0
+        if i < n_changed:
+            after[:, :, :32] = np.array([0.15, 0.18, 0.22, 0.25])[:, None, None]
+            sev = 0.5
+        cond = rng.uniform(0, 30, (3, 64, 64)).astype(np.float32)
+        path = tmp_path / f"t_r0_c{i}.npz"
+        np.savez(path, before=before, after=after, cond=cond, hazard=1, severity=sev, event="t")
+        paths.append(path)
+    return TileDataset(paths, compute_stats(paths), augment=False)
+
+
+def test_identity_finds_no_damage(tmp_path, cfg):
+    ds = _landslide_tiles(tmp_path)
+    result = evaluate_damage(identity_predict(ds.stats), ds, cfg)
+    assert result["damage"]["recall"] == 0.0 and result["damage"]["f1"] == 0.0
+    assert result["changed_tiles"]["n_tiles"] == 2
+
+
+def test_perfect_prediction_finds_all_damage(tmp_path, cfg):
+    ds = _landslide_tiles(tmp_path)
+    targets = {i: ds[i][1] for i in range(len(ds))}
+    lookup = {round(float(ds[i][0][0].mean()), 6): i for i in range(len(ds))}
+
+    def oracle(x):  # returns the real after image of each tile in the batch
+        return torch.stack([targets[lookup[round(float(t[0].mean()), 6)]] for t in x])
+
+    result = evaluate_damage(oracle, ds, cfg)
+    assert result["damage"]["f1"] == pytest.approx(1.0)
+    assert result["changed_tiles"]["ssim"] == pytest.approx(1.0, abs=1e-3)
