@@ -1,4 +1,4 @@
-"""Build report/report.pdf from report/report.md with headless Chrome or Edge.
+"""Build report/report_draft.pdf from report/report.md with headless Chrome or Edge.
 
 Usage: python tools/build_report.py   (needs the `markdown` package and Chrome or Edge)
 """
@@ -14,7 +14,7 @@ import markdown
 ROOT = Path(__file__).resolve().parents[1]
 SOURCE = ROOT / "report" / "report.md"
 HTML = ROOT / "report" / "report.html"
-PDF = ROOT / "report" / "report.pdf"
+PDF = ROOT / "report" / "report_draft.pdf"  # report.pdf is the hand-edited final version
 BROWSERS = (
     "chrome",
     "msedge",

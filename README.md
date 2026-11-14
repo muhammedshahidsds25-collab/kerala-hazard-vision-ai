@@ -119,8 +119,7 @@ diffusion loss curve.
 | `notebooks/` | Thin Colab drivers, committed with their outputs |
 | `tests/` | pytest suite (CPU-only, no network) |
 | `tools/survey_form.gs` | Google Apps Script that builds the survey form and exports its answers |
-| `report/` | Final report (`report.md` source, `report.pdf`) |
-| `docs/superpowers/` | Design spec and implementation plans |
+| `report/` | Final report (`report.pdf`); `report.md` is the draft it was edited from |
 
 ## Running it
 
