@@ -159,3 +159,9 @@ def test_perfect_prediction_finds_all_damage(tmp_path, cfg):
     result = evaluate_damage(oracle, ds, cfg)
     assert result["damage"]["f1"] == pytest.approx(1.0)
     assert result["changed_tiles"]["ssim"] == pytest.approx(1.0, abs=1e-3)
+
+
+def test_sweep_titles_keep_small_severities(tmp_path):
+    rgb = rgb_uint8(torch.rand(2, 4, 16, 16) * 0.3, rgb_max=0.3)
+    fig = plot_severity_sweep(rgb[0], [rgb[0], rgb[1]], [0.01, 0.03], tmp_path / "s.png")
+    assert [ax.get_title() for ax in fig.axes[1:]] == ["Severity 0.01", "Severity 0.03"]

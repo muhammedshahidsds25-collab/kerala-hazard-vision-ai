@@ -264,7 +264,7 @@ def plot_severity_sweep(
     axes = fig.subplots(1, len(frames) + 1)
     _show(axes[0], before_rgb, "Before")
     for ax, frame, sev in zip(axes[1:], frames, severities, strict=True):
-        _show(ax, frame, f"Severity {sev:.1f}")
+        _show(ax, frame, f"Severity {sev:g}")
     fig.tight_layout()
     fig.savefig(path, dpi=150)
     return fig
