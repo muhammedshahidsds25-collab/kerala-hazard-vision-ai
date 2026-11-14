@@ -116,5 +116,14 @@
       },
       "stable_diffusion_best_prompt": "aerial view after a severe landslide, exposed brown soil, destroyed vegetation, debris"
     }
+  },
+  "human_eval": {
+    "accuracy": 0.4583333333333333,
+    "fooled_rate": {
+      "diffusion": 0.7678571428571429,
+      "pix2pix": 0.5535714285714286
+    },
+    "n_raters": 8,
+    "real_judged_real": 0.6964285714285714
   }
 }
