@@ -1,0 +1,120 @@
+{
+  "events": {
+    "kuttanad_2018": {
+      "hazard": "flood",
+      "pix2pix": {
+        "n_tiles": 40,
+        "ssim": 0.6244621276855469,
+        "psnr": 17.13262367248535,
+        "fid": 269.2601623535156,
+        "sec_per_tile": 0.007223675924996087,
+        "severity_consistency": {
+          "pearson_r": 0.46387300372458024,
+          "mae": 0.37241086959838865
+        }
+      },
+      "diffusion": {
+        "n_tiles": 40,
+        "ssim": 0.6750863194465637,
+        "psnr": 14.801227569580078,
+        "fid": 269.1585388183594,
+        "sec_per_tile": 3.9238251574249885,
+        "severity_consistency": {
+          "pearson_r": NaN,
+          "mae": 0.475
+        }
+      },
+      "identity": {
+        "n_tiles": 40,
+        "ssim": 0.799408495426178,
+        "psnr": 22.00625228881836,
+        "fid": 213.7853546142578
+      },
+      "stable_diffusion": {
+        "satellite image of the same area after a flood": {
+          "n_tiles": 40,
+          "ssim": 0.6229146718978882,
+          "psnr": 20.566255569458008,
+          "fid": 260.1689147949219
+        },
+        "Sentinel-2 satellite photo, top-down view, after a flood, same terrain and rivers": {
+          "n_tiles": 40,
+          "ssim": 0.6280759572982788,
+          "psnr": 20.57924461364746,
+          "fid": 254.6672821044922
+        },
+        "aerial view after a severe flood, exposed brown soil, destroyed vegetation, debris": {
+          "n_tiles": 40,
+          "ssim": 0.6623302698135376,
+          "psnr": 20.69886589050293,
+          "fid": 320.2355041503906
+        },
+        "post-disaster satellite imagery, flood, realistic, high detail": {
+          "n_tiles": 40,
+          "ssim": 0.6158808469772339,
+          "psnr": 20.51725959777832,
+          "fid": 291.801025390625
+        }
+      },
+      "stable_diffusion_best_prompt": "aerial view after a severe flood, exposed brown soil, destroyed vegetation, debris"
+    },
+    "pettimudi_2020": {
+      "hazard": "landslide",
+      "pix2pix": {
+        "n_tiles": 256,
+        "ssim": 0.884838342666626,
+        "psnr": 30.864233016967773,
+        "fid": 54.228302001953125,
+        "sec_per_tile": 0.006009584953126534,
+        "severity_consistency": {
+          "pearson_r": 0.0341834040157831,
+          "mae": 0.049974057078361514
+        }
+      },
+      "diffusion": {
+        "n_tiles": 256,
+        "ssim": 0.7399601936340332,
+        "psnr": 21.351293563842773,
+        "fid": 65.6883544921875,
+        "sec_per_tile": 3.6177459472695332,
+        "severity_consistency": {
+          "pearson_r": -0.03317332363677757,
+          "mae": 0.09981395244598387
+        }
+      },
+      "identity": {
+        "n_tiles": 256,
+        "ssim": 0.9338759183883667,
+        "psnr": 32.52313995361328,
+        "fid": 25.385635375976562
+      },
+      "stable_diffusion": {
+        "satellite image of the same area after a landslide": {
+          "n_tiles": 256,
+          "ssim": 0.5254286527633667,
+          "psnr": 23.592994689941406,
+          "fid": 133.98678588867188
+        },
+        "Sentinel-2 satellite photo, top-down view, after a landslide, same terrain and rivers": {
+          "n_tiles": 256,
+          "ssim": 0.5317135453224182,
+          "psnr": 23.7410831451416,
+          "fid": 162.4883270263672
+        },
+        "aerial view after a severe landslide, exposed brown soil, destroyed vegetation, debris": {
+          "n_tiles": 256,
+          "ssim": 0.548676609992981,
+          "psnr": 23.974159240722656,
+          "fid": 195.35308837890625
+        },
+        "post-disaster satellite imagery, landslide, realistic, high detail": {
+          "n_tiles": 256,
+          "ssim": 0.5197348594665527,
+          "psnr": 23.48488998413086,
+          "fid": 132.0947723388672
+        }
+      },
+      "stable_diffusion_best_prompt": "aerial view after a severe landslide, exposed brown soil, destroyed vegetation, debris"
+    }
+  }
+}
