@@ -80,27 +80,35 @@ It also includes a human survey with real, pix2pix and diffusion images.
 
 ## Results
 
-All numbers come from [`outputs/metrics.json`](outputs/metrics.json), written by
-`notebooks/04_evaluate.ipynb`.
+Two held-out Kerala events, never seen in training. All numbers come from
+[`outputs/metrics.json`](outputs/metrics.json) and
+[`outputs/metrics_damage.json`](outputs/metrics_damage.json); the full write-up is the
+[report](report/report.pdf).
 
-| Method | SSIM ↑ | PSNR ↑ | FID ↓ | s / tile ↓ |
-|---|---|---|---|---|
-| pix2pix (GAN) | _pending_ | _pending_ | _pending_ | _pending_ |
-| Conditional diffusion | _pending_ | _pending_ | _pending_ | _pending_ |
-| Identity baseline | _pending_ | _pending_ | _pending_ | — |
-| Stable Diffusion (best prompt) | _pending_ | _pending_ | _pending_ | — |
+| Test event | Method | SSIM ↑ | PSNR (dB) ↑ | FID ↓ | s / tile ↓ |
+|---|---|---|---|---|---|
+| Pettimudi landslide (256 tiles) | Identity baseline | **0.934** | **32.5** | **25.4** | — |
+| | pix2pix (GAN) | 0.885 | 30.9 | 54.2 | **0.006** |
+| | Conditional diffusion | 0.740 | 21.4 | 65.7 | 3.62 |
+| | Stable Diffusion, best prompt | 0.549 | 24.0 | 195.4 | — |
+| Kuttanad flood (40 tiles) | Identity baseline | **0.799** | **22.0** | **213.8** | — |
+| | pix2pix (GAN) | 0.624 | 17.1 | 269.3 | **0.007** |
+| | Conditional diffusion | 0.675 | 14.8 | 269.2 | 3.92 |
+| | Stable Diffusion, best prompt | 0.662 | 20.7 | 320.2 | — |
 
-Other results, also pending until the notebooks run:
-- severity consistency (Pearson r between requested and measured severity) for both models
-- the human-evaluation fooled rate for each model
+- **Whole-tile metrics favour copying:** real damage covers about 0.2% of a landslide test
+  tile, so "nothing changes" wins SSIM, PSNR and FID.
+- **Damage placement** (change-mask overlap): pix2pix marks part of the Kuttanad flood
+  (precision 0.74, recall 0.18, F1 0.29); diffusion draws landslide scars that cover 14% of
+  the real scar area, but at 0.2% precision.
+- **Human evaluation** (8 raters, 21 images): diffusion images were judged real 77% of the
+  time, real images 70%, pix2pix 55%; rater accuracy 46%, at chance level.
 
-Figures will appear in [`outputs/figures/`](outputs/figures/):
-- `comparison.png`
-- `sweep_*.png`
-- `diffusion_diversity.png`
-- `severity_consistency.png`
-- `losses*.png`
-- `demo_*.png`
+![Landslide test event: before, real after, pix2pix, diffusion](outputs/figures/comparison_pettimudi_2020.png)
+
+More figures in [`outputs/figures/`](outputs/figures/): flood comparison, severity sweeps,
+diffusion diversity (four seeds), severity consistency, Stable Diffusion comparisons and the
+diffusion loss curve.
 
 ## Repository layout
 
@@ -111,6 +119,7 @@ Figures will appear in [`outputs/figures/`](outputs/figures/):
 | `notebooks/` | Thin Colab drivers, committed with their outputs |
 | `tests/` | pytest suite (CPU-only, no network) |
 | `tools/survey_form.gs` | Google Apps Script that builds the survey form and exports its answers |
+| `report/` | Final report (`report.md` source, `report.pdf`) |
 | `docs/superpowers/` | Design spec and implementation plans |
 
 ## Running it
