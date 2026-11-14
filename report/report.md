@@ -109,6 +109,8 @@ Severity r for diffusion on the flood is undefined because every output had the 
 - **Severity barely controls the output**, except weakly for pix2pix on the flood (r = 0.46).
 - **Speed:** pix2pix generates a tile about 600 times faster than 50-step diffusion.
 
+![pix2pix on the most flooded Kuttanad tile at four requested severities (demo notebook)](../outputs/figures/demo_kuttanad_2018_pix2pix.png)
+
 ### 5.3 Damage-focused scores
 
 Pixel-level overlap between the change each model generated and the real change, using the same rule as the severity labels. The identity baseline generates no change and scores about 0 by construction.
